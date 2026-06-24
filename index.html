@@ -83,10 +83,10 @@ body.dark .contract-toggle button.active{background:#2f3845;color:#fff}
 
 <div id="dilutePanel">
 <div class="input-group"><label>Объём спирта</label><div class="input-row">
-<input type="number" id="volumeInput" step="any" value="5" min="0">
+<input type="number" id="volumeInput" step="any" value="3" min="0">
 <div class="unit-toggle" id="unitToggleDilute"><button class="active" data-unit="L">Л</button><button data-unit="mL">мл</button></div>
 </div></div>
-<div class="input-group"><label>Крепость спирта (%)</label><input type="number" id="strengthInput" step="any" value="96" min="0" max="100"></div>
+<div class="input-group"><label>Крепость спирта (%)</label><input type="number" id="strengthInput" step="any" value="92" min="0" max="100"></div>
 <div class="input-group"><label>Температура спирта (°C) — коррекция</label><input type="number" id="tempInput" step="any" value="20" min="-10" max="50"></div>
 <div class="input-group"><label>Желаемая крепость (%)</label><input type="number" id="targetInput" step="any" value="40" min="0" max="100"></div>
 <div class="input-group"><label>Желаемый конечный объём (л или мл)</label><input type="number" id="finalVolumeTarget" step="any" value="1" min="0.01"></div>
@@ -129,13 +129,6 @@ body.dark .contract-toggle button.active{background:#2f3845;color:#fff}
 <div class="input-group"><label>Головы (% от абсолютного спирта)</label><input type="number" id="headsPct" step="any" value="8" min="0" max="20"></div>
 <div class="input-group"><label>Хвосты (% от абсолютного спирта)</label><input type="number" id="tailsPct" step="any" value="10" min="0" max="30"></div>
 <div class="input-group"><label>Крепость тела после перегона (%)</label><input type="number" id="bodyStrength" step="any" value="94" min="0" max="97"></div>
-<div class="flex" style="gap:8px;margin-top:3px;flex-wrap:wrap">
-<span style="font-weight:500;font-size:.8rem">Контракция:</span>
-<div class="contract-toggle" id="contractToggleDistill">
-<button class="active" data-contract="on">Учитывать</button>
-<button data-contract="off">Не учитывать</button>
-</div>
-</div>
 <button class="calc-btn" id="calcDistillBtn">Рассчитать перегон</button>
 <div class="result-box" id="distillResult">
 <div class="result-grid">
@@ -144,7 +137,7 @@ body.dark .contract-toggle button.active{background:#2f3845;color:#fff}
 <div class="stat-item"><span class="stat-label">Хвосты (оставить)</span><span class="stat-value" id="tailsOut">0 мл</span></div>
 <div class="stat-item"><span class="stat-label">Тело ~ 40% экв.</span><span class="stat-value" id="bodyEq40">0 мл</span></div>
 </div>
-<div style="font-size:.75rem;margin-top:6px;color:#2c5a7a" id="distillNote">⚙️ Головы и хвосты от АС</div>
+<div style="font-size:.75rem;margin-top:6px;color:#2c5a7a" id="distillNote">⚙️ Головы и хвосты от АС (контракция не учитывается)</div>
 </div>
 </div>
 
@@ -239,7 +232,6 @@ if(callback)callback();
 });
 }
 initContractToggle('contractToggle', ()=>{if(currentMode==='dilute')calcDilution();});
-initContractToggle('contractToggleDistill', ()=>{if(currentMode==='distill')calcDistillation();});
 
 themeToggle.addEventListener('click',function(){
 body.classList.toggle('dark');
@@ -323,9 +315,6 @@ let finalVolMl=0;
 let spiritVol=volMl;
 
 if(diluteMode==='fixed'){
-// ИСПРАВЛЕННАЯ ФОРМУЛА С КОНТРАКЦИЕЙ
-// Без контракции: V_воды = V_спирта × (C_нач/C_жел - 1)
-// С контракцией:   V_воды = V_спирта × (C_нач/C_жел - 1) / k
 waterToAdd = volMl * (correctedStr / target - 1) / k;
 if(waterToAdd<0){alert('Невозможно разбавить');return;}
 finalVolMl=volMl+waterToAdd;
@@ -334,9 +323,6 @@ if(isNaN(finalTargetMl)||finalTargetMl<=0){
 alert('Укажите желаемый конечный объём.');
 return;
 }
-// Для режима "Задать объём" тоже корректируем
-// Нужно найти сколько спирта взять, чтобы с учётом контракции получить finalTargetMl
-// V_спирта = V_итог / (1 + (C_нач/C_жел - 1) / k)
 const denominator = 1 + (correctedStr / target - 1) / k;
 spiritVol = finalTargetMl / denominator;
 waterToAdd = spiritVol * (correctedStr / target - 1) / k;
@@ -348,8 +334,9 @@ volumeInput.value=spiritVol.toFixed(1);
 }
 }
 
-// Проверка крепости (должна быть ровно target)
-const realStrength = (spiritVol * correctedStr / 100) / (finalVolMl * (useContraction ? k : 1)) * 100;
+// ПРАВИЛЬНЫЙ РАСЧЕТ РЕАЛЬНОЙ КРЕПОСТИ
+// waterToAdd уже скомпенсировала контракцию, поэтому просто делим на итоговый объём
+const realStrength = (spiritVol * correctedStr / 100) / finalVolMl * 100;
 
 const unitStr=currentUnitDilute==='L'?'л':'мл';
 const displayVol=currentUnitDilute==='L'?finalVolMl/1000:finalVolMl;
@@ -406,10 +393,10 @@ alert('Слишком много хвостов, тело отрицательн
 return;
 }
 
-const k=useContraction?getContractionFactor(bodyStr):1;
-const bodyVol=(bodyAbs/(bodyStr/100))/k;
-const eq40=(bodyAbs/0.4)/k;
-const tailsVol=(tailsAbs/0.2)/k;
+// БЕЗ КОНТРАКЦИИ (k=1)
+const bodyVol=bodyAbs/(bodyStr/100);
+const eq40=bodyAbs/0.4;
+const tailsVol=tailsAbs/0.2;
 
 const unitStr=currentUnitDistill==='L'?'л':'мл';
 const displayUnit=(val)=>{
@@ -421,7 +408,7 @@ headsOut.textContent=displayUnit(headsVol)+' (≈'+headsAbs.toFixed(1)+' а.с.)
 bodyOut.textContent=displayUnit(bodyVol)+' (при '+bodyStr+'%)';
 tailsOut.textContent=displayUnit(tailsVol)+' (≈'+tailsAbs.toFixed(1)+' а.с.)';
 bodyEq40.textContent=displayUnit(eq40)+' (40%)';
-distillNote.textContent='⚙️ Коррекция: '+strength+'% при '+temp+'°C → '+correctedStr.toFixed(2)+'% | Головы '+headsP+'% от АС, хвосты '+tailsP+'% от АС'+(useContraction?' | Контракция учтена (k='+k.toFixed(2)+')':' | Контракция НЕ учтена');
+distillNote.textContent='⚙️ Коррекция: '+strength+'% при '+temp+'°C → '+correctedStr.toFixed(2)+'% | Головы '+headsP+'% от АС, хвосты '+tailsP+'% от АС | Контракция НЕ учитывается';
 }
 
 function calcCorrection(){
