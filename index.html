@@ -95,13 +95,6 @@ body.dark .contract-toggle button.active{background:#2f3845;color:#fff}
 <button id="modeDiluteFixed" class="inline-btn active-mode">Фикс. объём</button>
 <button id="modeDiluteFinal" class="inline-btn secondary">Задать объём</button>
 </div>
-<div class="flex" style="gap:8px;margin-top:3px;flex-wrap:wrap">
-<span style="font-weight:500;font-size:.8rem">Контракция:</span>
-<div class="contract-toggle" id="contractToggle">
-<button class="active" data-contract="on">Учитывать</button>
-<button data-contract="off">Не учитывать</button>
-</div>
-</div>
 <button class="calc-btn" id="calcDiluteBtn">Рассчитать разбавление</button>
 <div class="result-box" id="diluteResult">
 <div class="result-grid">
@@ -112,10 +105,10 @@ body.dark .contract-toggle button.active{background:#2f3845;color:#fff}
 <div style="margin-top:6px;background:#eef4fa;padding:6px 10px;border-radius:12px" id="diluteDetails">
 <div class="result-detail"><span>Спирта берём</span><span id="spiritTaken">0 мл</span></div>
 <div class="result-detail"><span>Воды берём</span><span id="waterTaken">0 мл</span></div>
-<div class="result-detail" id="contractDetail"><span>Коэф. контракции</span><span id="contractionFactor">—</span></div>
+<div class="result-detail"><span>Контракция</span><span id="contractionInfo">—</span></div>
 </div>
 <div style="margin-top:6px;font-size:.75rem;background:#eef4fa;padding:4px 10px;border-radius:30px;display:inline-block" id="tempNote">🌡️ коррекция по 20°C</div>
-<div class="note" id="contractNote">* контракция: <span id="contractStatus">учитывается</span></div>
+<div class="note">* контракция рассчитывается через плотности (табличные данные)</div>
 </div>
 </div>
 
@@ -160,6 +153,100 @@ body.dark .contract-toggle button.active{background:#2f3845;color:#fff}
 
 <script>
 (function(){
+// ===== ТАБЛИЦА ПЛОТНОСТЕЙ (кг/л) при 20°C =====
+const densityTable = [
+  { strength: 0,   density: 0.998 },
+  { strength: 5,   density: 0.989 },
+  { strength: 10,  density: 0.982 },
+  { strength: 15,  density: 0.976 },
+  { strength: 20,  density: 0.969 },
+  { strength: 25,  density: 0.961 },
+  { strength: 30,  density: 0.954 },
+  { strength: 35,  density: 0.946 },
+  { strength: 40,  density: 0.948 },
+  { strength: 45,  density: 0.939 },
+  { strength: 50,  density: 0.930 },
+  { strength: 55,  density: 0.921 },
+  { strength: 60,  density: 0.913 },
+  { strength: 65,  density: 0.904 },
+  { strength: 70,  density: 0.891 },
+  { strength: 75,  density: 0.879 },
+  { strength: 80,  density: 0.865 },
+  { strength: 85,  density: 0.849 },
+  { strength: 90,  density: 0.834 },
+  { strength: 92,  density: 0.828 },
+  { strength: 95,  density: 0.816 },
+  { strength: 96,  density: 0.812 },
+  { strength: 97,  density: 0.807 },
+  { strength: 98,  density: 0.802 },
+  { strength: 99,  density: 0.797 },
+  { strength: 100, density: 0.789 }
+];
+
+// ===== Интерполяция плотности =====
+function getDensity(strength) {
+  if (strength <= 0) return densityTable[0].density;
+  if (strength >= 100) return densityTable[densityTable.length - 1].density;
+  
+  for (let i = 0; i < densityTable.length - 1; i++) {
+    const cur = densityTable[i];
+    const next = densityTable[i + 1];
+    if (strength >= cur.strength && strength <= next.strength) {
+      // Линейная интерполяция
+      const t = (strength - cur.strength) / (next.strength - cur.strength);
+      return cur.density + t * (next.density - cur.density);
+    }
+  }
+  return densityTable[densityTable.length - 1].density;
+}
+
+// ===== РАСЧЁТ РАЗБАВЛЕНИЯ ЧЕРЕЗ ПЛОТНОСТИ =====
+function calcDilutionByDensity(V_start, C_start, C_target) {
+  // 1. Плотность исходного спирта
+  const rho_start = getDensity(C_start);
+  
+  // 2. Масса исходного спирта
+  const m_start = V_start * rho_start;
+  
+  // 3. Масса абсолютного спирта
+  const m_ethanol = m_start * (C_start / 100);
+  
+  // 4. Масса воды в исходном спирте
+  const m_water_in_start = m_start - m_ethanol;
+  
+  // 5. Нужная масса абсолютного спирта в конечном растворе (та же)
+  // C_target = m_ethanol / m_final * 100
+  // m_final = m_ethanol / (C_target / 100)
+  const m_final = m_ethanol / (C_target / 100);
+  
+  // 6. Масса воды, которую нужно добавить
+  const m_water_add = m_final - m_start;
+  
+  // 7. Плотность конечного раствора
+  const rho_final = getDensity(C_target);
+  
+  // 8. Итоговый объём
+  const V_final = m_final / rho_final;
+  
+  // 9. Объём воды (при 20°C плотность воды ≈ 0.998 кг/л)
+  const V_water_add = m_water_add / 0.998;
+  
+  // 10. Контракция (усадка) в процентах
+  const contraction = (1 - V_final / (V_start + V_water_add)) * 100;
+  
+  return {
+    V_water_add: V_water_add,
+    V_final: V_final,
+    m_water_add: m_water_add,
+    m_final: m_final,
+    rho_start: rho_start,
+    rho_final: rho_final,
+    contraction: contraction,
+    m_ethanol: m_ethanol
+  };
+}
+
+// ===== ОСТАЛЬНОЙ КОД =====
 const body=document.body;
 const themeToggle=document.getElementById('themeToggle');
 const modeButtons=document.querySelectorAll('#modeToggle button');
@@ -183,10 +270,7 @@ const correctedStrength=document.getElementById('correctedStrength');
 const tempNote=document.getElementById('tempNote');
 const spiritTaken=document.getElementById('spiritTaken');
 const waterTaken=document.getElementById('waterTaken');
-const contractionFactor=document.getElementById('contractionFactor');
-const contractStatus=document.getElementById('contractStatus');
-const contractNote=document.getElementById('contractNote');
-const contractDetail=document.getElementById('contractDetail');
+const contractionInfo=document.getElementById('contractionInfo');
 
 const distillVol=document.getElementById('distillVol');
 const distillStrength=document.getElementById('distillStrength');
@@ -217,21 +301,6 @@ let currentUnitDilute='L';
 let currentUnitDistill='L';
 let diluteMode='fixed';
 let currentMode='dilute';
-let useContraction=true;
-
-function initContractToggle(containerId, callback) {
-const container=document.getElementById(containerId);
-const btns=container.querySelectorAll('button');
-btns.forEach(btn=>{
-btn.addEventListener('click',function(){
-btns.forEach(b=>b.classList.remove('active'));
-this.classList.add('active');
-useContraction=this.dataset.contract==='on';
-if(callback)callback();
-});
-});
-}
-initContractToggle('contractToggle', ()=>{if(currentMode==='dilute')calcDilution();});
 
 themeToggle.addEventListener('click',function(){
 body.classList.toggle('dark');
@@ -283,12 +352,6 @@ function correctByTemp(measured,tempCurr,tempCal=20){
 return measured-(tempCurr-tempCal)*0.3;
 }
 
-function getContractionFactor(strength){
-if(strength>60)return 0.94;
-if(strength>=40)return 0.96;
-return 0.98;
-}
-
 function calcDilution(){
 let vol=parseFloat(volumeInput.value);
 const strength=parseFloat(strengthInput.value);
@@ -304,62 +367,51 @@ if(strength<=target){
 alert('Крепость спирта должна быть выше желаемой.');
 return;
 }
-let volMl=(currentUnitDilute==='L')?vol*1000:vol;
-let finalTargetMl=(currentUnitDilute==='L')?targetFinalVol*1000:targetFinalVol;
 
 const correctedStr=correctByTemp(strength,temp,20);
-const k=useContraction?getContractionFactor(target):1;
 
-let waterToAdd=0;
-let finalVolMl=0;
-let spiritVol=volMl;
+let volL = (currentUnitDilute==='L') ? vol : vol / 1000;
+let finalTargetL = (currentUnitDilute==='L') ? targetFinalVol : targetFinalVol / 1000;
+let result;
 
 if(diluteMode==='fixed'){
-waterToAdd = volMl * (correctedStr / target - 1) / k;
-if(waterToAdd<0){alert('Невозможно разбавить');return;}
-finalVolMl=volMl+waterToAdd;
+result = calcDilutionByDensity(volL, correctedStr, target);
 }else{
-if(isNaN(finalTargetMl)||finalTargetMl<=0){
-alert('Укажите желаемый конечный объём.');
-return;
+// Режим "Задать объём": подбором находим нужный объём спирта
+// Бинарный поиск
+let lo = 0, hi = finalTargetL;
+for(let iter = 0; iter < 100; iter++){
+let mid = (lo + hi) / 2;
+let r = calcDilutionByDensity(mid, correctedStr, target);
+if(r.V_final < finalTargetL){
+lo = mid;
+}else{
+hi = mid;
 }
-const denominator = 1 + (correctedStr / target - 1) / k;
-spiritVol = finalTargetMl / denominator;
-waterToAdd = spiritVol * (correctedStr / target - 1) / k;
-finalVolMl = spiritVol + waterToAdd;
+}
+let spiritVol = (lo + hi) / 2;
+result = calcDilutionByDensity(spiritVol, correctedStr, target);
+// Обновляем поле объёма
 if(currentUnitDilute==='L'){
-volumeInput.value=(spiritVol/1000).toFixed(3);
+volumeInput.value = spiritVol.toFixed(3);
 }else{
-volumeInput.value=spiritVol.toFixed(1);
+volumeInput.value = (spiritVol * 1000).toFixed(1);
 }
 }
-
-// ПРАВИЛЬНЫЙ РАСЧЕТ РЕАЛЬНОЙ КРЕПОСТИ
-// waterToAdd уже скомпенсировала контракцию, поэтому просто делим на итоговый объём
-const realStrength = (spiritVol * correctedStr / 100) / finalVolMl * 100;
 
 const unitStr=currentUnitDilute==='L'?'л':'мл';
-const displayVol=currentUnitDilute==='L'?finalVolMl/1000:finalVolMl;
-const displayWater=currentUnitDilute==='L'?waterToAdd/1000:waterToAdd;
-const displaySpirit=currentUnitDilute==='L'?spiritVol/1000:spiritVol;
+const displayWater=currentUnitDilute==='L' ? result.V_water_add : result.V_water_add * 1000;
+const displayFinal=currentUnitDilute==='L' ? result.V_final : result.V_final * 1000;
+const displaySpirit=currentUnitDilute==='L' ? volL : volL * 1000;
 
 waterAdd.textContent=displayWater.toFixed(2)+' '+unitStr;
-finalVol.textContent=displayVol.toFixed(2)+' '+unitStr;
-correctedStrength.textContent=realStrength.toFixed(2)+'%';
+finalVol.textContent=displayFinal.toFixed(2)+' '+unitStr;
+correctedStrength.textContent=target.toFixed(2)+'%';
 tempNote.textContent='🌡️ коррекция: '+strength+'% при '+temp+'°C → '+(correctedStr).toFixed(2)+'%';
 
 spiritTaken.textContent=displaySpirit.toFixed(2)+' '+unitStr;
 waterTaken.textContent=displayWater.toFixed(2)+' '+unitStr;
-
-if(useContraction){
-contractionFactor.textContent=k.toFixed(2);
-contractDetail.style.display='flex';
-contractStatus.textContent='учитывается (k='+k.toFixed(2)+')';
-}else{
-contractionFactor.textContent='—';
-contractDetail.style.display='none';
-contractStatus.textContent='НЕ учитывается';
-}
+contractionInfo.textContent=result.contraction.toFixed(2)+'% (усадка)';
 }
 
 function calcDistillation(){
@@ -378,9 +430,9 @@ if(isNaN(headsP)||headsP<0||headsP>30){alert('Головы 0-30%');return;}
 if(isNaN(tailsP)||tailsP<0||tailsP>40){alert('Хвосты 0-40%');return;}
 if(isNaN(bodyStr)||bodyStr<0||bodyStr>97){alert('Крепость тела 0-97%');return;}
 
-let volMl=(currentUnitDistill==='L')?vol*1000:vol;
+let volL=(currentUnitDistill==='L')?vol:vol/1000;
 const correctedStr=correctByTemp(strength,temp,20);
-const absTotal=volMl*(correctedStr/100);
+const absTotal=volL*(correctedStr/100);
 
 const headsAbs=absTotal*(headsP/100);
 const headsVol=headsAbs/0.8;
@@ -393,20 +445,20 @@ alert('Слишком много хвостов, тело отрицательн
 return;
 }
 
-// БЕЗ КОНТРАКЦИИ (k=1)
+// БЕЗ КОНТРАКЦИИ
 const bodyVol=bodyAbs/(bodyStr/100);
 const eq40=bodyAbs/0.4;
 const tailsVol=tailsAbs/0.2;
 
 const unitStr=currentUnitDistill==='L'?'л':'мл';
 const displayUnit=(val)=>{
-if(currentUnitDistill==='L')return (val/1000).toFixed(2)+' '+unitStr;
-return val.toFixed(1)+' '+unitStr;
+if(currentUnitDistill==='L')return (val).toFixed(2)+' '+unitStr;
+return (val*1000).toFixed(1)+' '+unitStr;
 };
 
-headsOut.textContent=displayUnit(headsVol)+' (≈'+headsAbs.toFixed(1)+' а.с.)';
+headsOut.textContent=displayUnit(headsVol)+' (≈'+(headsAbs*1000).toFixed(1)+' мл а.с.)';
 bodyOut.textContent=displayUnit(bodyVol)+' (при '+bodyStr+'%)';
-tailsOut.textContent=displayUnit(tailsVol)+' (≈'+tailsAbs.toFixed(1)+' а.с.)';
+tailsOut.textContent=displayUnit(tailsVol)+' (≈'+(tailsAbs*1000).toFixed(1)+' мл а.с.)';
 bodyEq40.textContent=displayUnit(eq40)+' (40%)';
 distillNote.textContent='⚙️ Коррекция: '+strength+'% при '+temp+'°C → '+correctedStr.toFixed(2)+'% | Головы '+headsP+'% от АС, хвосты '+tailsP+'% от АС | Контракция НЕ учитывается';
 }
