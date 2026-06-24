@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+<title>Калькулятор самогонщика</title>
+<style>
+*{box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif;transition:background-color .2s,color .2s,border-color .2s}
+html,body{margin:0;padding:0;min-height:100vh}
+body{display:flex;justify-content:center;align-items:flex-start;background:#f0f2f5;padding:10px}
+.app{max-width:660px;width:100%;padding:0}
+.card{background:#fff;border-radius:24px;padding:20px 16px;box-shadow:0 20px 40px rgba(0,0,0,.08),0 8px 16px rgba(0,0,0,.04)}
+body.dark{background:#1a1e24}
+body.dark .card{background:#262c34;box-shadow:0 20px 40px rgba(0,0,0,.6)}
+body.dark label,body.dark .stat-value{color:#e8edf3}
+body.dark .input-group input,body.dark .input-group select{background:#1e232b;border-color:#3a424c;color:#f0f4fa}
+body.dark .input-group input:focus{border-color:#6a8cff}
+body.dark .mode-toggle button{background:#323a45;color:#b0c0d0}
+body.dark .mode-toggle button.active{background:#5a7a9a;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.6);border:2px solid #8ab0e0}
+body.dark .theme-toggle{background:#323a45;color:#e0e8f0}
+body.dark .result-box{background:#1f262e;border-color:#3a424c}
+body.dark .result-box .stat-value{color:#b8d0ff}
+h1{font-size:1.4rem;font-weight:600;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.header-controls{display:flex;gap:8px;align-items:center}
+.theme-toggle{background:#eef2f7;border:none;border-radius:40px;padding:6px 12px;font-weight:500;font-size:.8rem;cursor:pointer;display:flex;align-items:center;gap:4px;color:#1f2937;white-space:nowrap}
+.mode-toggle{display:flex;background:#eef2f7;border-radius:40px;padding:3px;margin:12px 0 16px;gap:3px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.mode-toggle button{flex:1;min-width:0;border:none;background:0 0;padding:8px 4px;border-radius:30px;font-weight:600;font-size:.7rem;cursor:pointer;color:#2c3e50;transition:.15s;border:2px solid transparent;text-align:center;white-space:nowrap}
+.mode-toggle button.active{background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.1);color:#0b1e33;border:2px solid #2b4c7c}
+body.dark .mode-toggle button.active{background:#2f3845;color:#fff;border:2px solid #7aacff}
+.input-group{display:flex;flex-direction:column;margin-bottom:10px}
+.input-group label{font-weight:500;font-size:.85rem;margin-bottom:3px;color:#2d3a4a}
+.input-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.input-row input,.input-row select{flex:1;min-width:60px;padding:8px 10px;border-radius:12px;border:1px solid #d0d8e0;background:#fff;font-size:.95rem;outline:0;width:100%}
+.input-row input:focus{border-color:#4a7cff;box-shadow:0 0 0 2px rgba(74,124,255,.15)}
+.unit-toggle{display:flex;gap:3px;background:#eef2f7;border-radius:30px;padding:3px;flex-shrink:0}
+.unit-toggle button{border:none;background:0 0;padding:4px 10px;border-radius:20px;font-weight:500;cursor:pointer;color:#2c3e50;font-size:.75rem}
+.unit-toggle button.active{background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.05)}
+body.dark .unit-toggle{background:#1e232b}
+body.dark .unit-toggle button.active{background:#2f3845;color:#fff}
+.result-box{background:#f8faff;border-radius:20px;padding:14px 16px;margin:16px 0 8px;border:1px solid #e0e8f0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+.stat-item{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #dce2ec;font-size:.85rem;gap:8px;word-break:break-word}
+.stat-item:last-child{border-bottom:0}
+.stat-label{color:#4a5a6e;font-weight:450;flex-shrink:0}
+.stat-value{font-weight:600;color:#0b2b4a;text-align:right;word-break:break-word}
+.calc-btn{background:#2b4c7c;border:none;width:100%;padding:12px;border-radius:30px;color:#fff;font-weight:600;font-size:1rem;margin-top:10px;cursor:pointer;transition:.2s}
+.calc-btn:hover{background:#1f3d66;transform:scale(.98)}
+.subnote{font-size:.7rem;color:#6a7e92;margin-top:10px;text-align:center}
+body.dark .subnote{color:#8a9eb0}
+.flex{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.inline-btn{background:#3d5f8a;border:none;padding:5px 14px;border-radius:30px;color:#fff;font-weight:500;cursor:pointer;transition:.15s;border:2px solid transparent;font-size:.8rem;white-space:nowrap}
+.inline-btn:hover{background:#2a4a70}
+.inline-btn.secondary{background:#4b6f9e}
+.inline-btn.secondary:hover{background:#3a5a82}
+.inline-btn.active-mode{background:#1a3a5a;border:2px solid #7aacff;box-shadow:0 0 0 2px rgba(42,109,255,.3)}
+body.dark .inline-btn.active-mode{background:#1a3a5a;border:2px solid #8ab0e0}
+.note{font-size:.7rem;color:#5a6e82;margin-top:3px}
+body.dark .note{color:#8a9eb0}
+.result-detail{font-size:.8rem;padding:4px 0;border-bottom:1px dashed #dce2ec;display:flex;justify-content:space-between;gap:8px;word-break:break-word}
+.result-detail:last-child{border-bottom:0}
+.big-result{font-size:1.2rem;font-weight:700;color:#1a3a5a;text-align:center;padding:6px 0}
+body.dark .big-result{color:#8ab0e0}
+.contract-toggle{display:flex;gap:3px;background:#eef2f7;border-radius:30px;padding:3px}
+.contract-toggle button{border:none;background:0 0;padding:4px 10px;border-radius:20px;font-weight:500;cursor:pointer;color:#2c3e50;font-size:.7rem}
+.contract-toggle button.active{background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.05)}
+body.dark .contract-toggle{background:#1e232b}
+body.dark .contract-toggle button.active{background:#2f3845;color:#fff}
+.temp-note{font-size:.7rem;margin-top:3px}
+#diluteDetails,#distillResult,#correctResult{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+@media(max-width:600px){
+.app{padding:0}
+.card{padding:14px 12px;border-radius:18px}
+h1{font-size:1.2rem}
+.mode-toggle button{font-size:.65rem;padding:6px 3px}
+.input-group{margin-bottom:8px}
+.input-group label{font-size:.8rem}
+.input-row input,.input-row select{padding:6px 8px;font-size:.9rem;min-width:50px}
+.result-grid{grid-template-columns:1fr 1fr;gap:4px 8px}
+.stat-item{font-size:.8rem;padding:3px 0}
+.result-box{padding:10px 12px}
+.calc-btn{padding:10px;font-size:.95rem}
+.inline-btn{padding:4px 10px;font-size:.7rem}
+.unit-toggle button{padding:3px 8px;font-size:.7rem}
+.contract-toggle button{padding:3px 8px;font-size:.7rem}
+.big-result{font-size:1rem}
+.subnote{font-size:.65rem}
+.flex{gap:4px}
+#diluteDetails .result-detail{font-size:.75rem}
+}
+
+@media(max-width:400px){
+.card{padding:10px 8px;border-radius:14px}
+h1{font-size:1rem}
+.mode-toggle{flex-wrap:nowrap;overflow-x:auto}
+.mode-toggle button{font-size:.6rem;padding:4px 2px;flex:0 0 auto}
+.result-grid{grid-template-columns:1fr 1fr}
+.stat-item{font-size:.7rem;flex-wrap:wrap}
+.stat-item .stat-value{font-size:.7rem}
+.input-row input,.input-row select{padding:5px 6px;font-size:.8rem;min-width:40px}
+.calc-btn{padding:8px;font-size:.85rem}
+.inline-btn{padding:3px 8px;font-size:.65rem}
+.unit-toggle button{padding:2px 6px;font-size:.6rem}
+.contract-toggle button{padding:2px 6px;font-size:.6rem}
+.result-box{padding:8px 10px}
+#diluteDetails .result-detail{font-size:.65rem;padding:3px 0}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="card">
+<h1><span>🧪 Самогон</span><div class="header-controls"><button class="theme-toggle" id="themeToggle">🌙 Тёмная</button></div></h1>
+<div class="mode-toggle" id="modeToggle">
+<button class="active" data-mode="dilute">Разбавление</button>
+<button data-mode="distill">Дробный перегон</button>
+<button data-mode="correct">Коррекция по температуре</button>
+</div>
+
+<div id="dilutePanel">
+<div class="input-group"><label>Объём спирта</label><div class="input-row">
+<input type="number" id="volumeInput" step="any" value="5" min="0">
+<div class="unit-toggle" id="unitToggleDilute"><button class="active" data-unit="L">Л</button><button data-unit="mL">мл</button></div>
+</div></div>
+<div class="input-group"><label>Крепость спирта (%)</label><input type="number" id="strengthInput" step="any" value="96" min="0" max="100"></div>
+<div class="input-group"><label>Температура спирта (°C) — коррекция</label><input type="number" id="tempInput" step="any" value="20" min="-10" max="50"></div>
+<div class="input-group"><label>Желаемая крепость (%)</label><input type="number" id="targetInput" step="any" value="40" min="0" max="100"></div>
+<div class="input-group"><label>Желаемый конечный объём (л или мл)</label><input type="number" id="finalVolumeTarget" step="any" value="1" min="0.01"></div>
+<div class="flex" style="gap:8px;margin-top:3px;flex-wrap:wrap">
+<span style="font-weight:500;font-size:.8rem">Режим:</span>
+<button id="modeDiluteFixed" class="inline-btn active-mode">Фикс. объём</button>
+<button id="modeDiluteFinal" class="inline-btn secondary">Задать объём</button>
+</div>
+<div class="flex" style="gap:8px;margin-top:3px;flex-wrap:wrap">
+<span style="font-weight:500;font-size:.8rem">Контракция:</span>
+<div class="contract-toggle" id="contractToggle">
+<button class="active" data-contract="on">Учитывать</button>
+<button data-contract="off">Не учитывать</button>
+</div>
+</div>
+<button class="calc-btn" id="calcDiluteBtn">Рассчитать разбавление</button>
+<div class="result-box" id="diluteResult">
+<div class="result-grid">
+<div class="stat-item"><span class="stat-label">Воды добавить</span><span class="stat-value" id="waterAdd">0 мл</span></div>
+<div class="stat-item"><span class="stat-label">Итоговый объём</span><span class="stat-value" id="finalVol">0 мл</span></div>
+<div class="stat-item"><span class="stat-label">Крепость (скорр.)</span><span class="stat-value" id="correctedStrength">0%</span></div>
+</div>
+<div style="margin-top:6px;background:#eef4fa;padding:6px 10px;border-radius:12px" id="diluteDetails">
+<div class="result-detail"><span>Спирта берём</span><span id="spiritTaken">0 мл</span></div>
+<div class="result-detail"><span>Воды берём</span><span id="waterTaken">0 мл</span></div>
+<div class="result-detail" id="contractDetail"><span>Коэф. контракции</span><span id="contractionFactor">—</span></div>
+</div>
+<div style="margin-top:6px;font-size:.75rem;background:#eef4fa;padding:4px 10px;border-radius:30px;display:inline-block" id="tempNote">🌡️ коррекция по 20°C</div>
+<div class="note" id="contractNote">* контракция: <span id="contractStatus">учитывается</span></div>
+</div>
+</div>
+
+<div id="distillPanel" style="display:none">
+<div class="input-group"><label>Объём спирта-сырца</label><div class="input-row">
+<input type="number" id="distillVol" step="any" value="10">
+<div class="unit-toggle" id="unitToggleDistill"><button class="active" data-unit="L">Л</button><button data-unit="mL">мл</button></div>
+</div></div>
+<div class="input-group"><label>Крепость спирта-сырца (%)</label><input type="number" id="distillStrength" step="any" value="40"></div>
+<div class="input-group"><label>Температура сырца (°C)</label><input type="number" id="distillTemp" step="any" value="20" min="-10" max="50"></div>
+<div class="input-group"><label>Головы (% от абсолютного спирта)</label><input type="number" id="headsPct" step="any" value="8" min="0" max="20"></div>
+<div class="input-group"><label>Хвосты (% от абсолютного спирта)</label><input type="number" id="tailsPct" step="any" value="10" min="0" max="30"></div>
+<div class="input-group"><label>Крепость тела после перегона (%)</label><input type="number" id="bodyStrength" step="any" value="94" min="0" max="97"></div>
+<div class="flex" style="gap:8px;margin-top:3px;flex-wrap:wrap">
+<span style="font-weight:500;font-size:.8rem">Контракция:</span>
+<div class="contract-toggle" id="contractToggleDistill">
+<button class="active" data-contract="on">Учитывать</button>
+<button data-contract="off">Не учитывать</button>
+</div>
+</div>
+<button class="calc-btn" id="calcDistillBtn">Рассчитать перегон</button>
+<div class="result-box" id="distillResult">
+<div class="result-grid">
+<div class="stat-item"><span class="stat-label">Головы (отобрать)</span><span class="stat-value" id="headsOut">0 мл</span></div>
+<div class="stat-item"><span class="stat-label">Тело (выход)</span><span class="stat-value" id="bodyOut">0 мл</span></div>
+<div class="stat-item"><span class="stat-label">Хвосты (оставить)</span><span class="stat-value" id="tailsOut">0 мл</span></div>
+<div class="stat-item"><span class="stat-label">Тело ~ 40% экв.</span><span class="stat-value" id="bodyEq40">0 мл</span></div>
+</div>
+<div style="font-size:.75rem;margin-top:6px;color:#2c5a7a" id="distillNote">⚙️ Головы и хвосты от АС</div>
+</div>
+</div>
+
+<div id="correctPanel" style="display:none">
+<div class="input-group"><label>Показания ареометра (крепость, %)</label><input type="number" id="measStrength" step="any" value="96" min="0" max="100"></div>
+<div class="input-group"><label>Температура жидкости (°C)</label><input type="number" id="measTemp" step="any" value="25" min="-10" max="50"></div>
+<div class="input-group"><label>Температура калибровки (°C)</label><input type="number" id="calibTemp" step="any" value="20" min="0" max="30"></div>
+<button class="calc-btn" id="calcCorrectBtn">Скорректировать крепость</button>
+<div class="result-box" id="correctResult">
+<div class="big-result" id="correctedValue">0.0%</div>
+<div class="result-detail"><span>Исходные показания</span><span id="measDisplay">0% при 0°C</span></div>
+<div class="result-detail"><span>Истинная крепость</span><span id="trueDisplay">0%</span></div>
+<div class="result-detail"><span>Поправка</span><span id="correctionDisplay">0.0%</span></div>
+<div style="margin-top:6px;font-size:.7rem;color:#5a6e82" id="formulaNote">Формула: A_ист = A_изм − (T_тек − T_кал) · 0.3</div>
+</div>
+</div>
+<div class="subnote">Коррекция по температуре: A_ист = A_изм − (T_тек − T_кал) · 0.3</div>
+</div>
+</div>
+
+<script>
+(function(){
+const body=document.body;
+const themeToggle=document.getElementById('themeToggle');
+const modeButtons=document.querySelectorAll('#modeToggle button');
+const dilutePanel=document.getElementById('dilutePanel');
+const distillPanel=document.getElementById('distillPanel');
+const correctPanel=document.getElementById('correctPanel');
+
+const volumeInput=document.getElementById('volumeInput');
+const strengthInput=document.getElementById('strengthInput');
+const targetInput=document.getElementById('targetInput');
+const tempInput=document.getElementById('tempInput');
+const finalVolumeTarget=document.getElementById('finalVolumeTarget');
+const unitToggleDilute=document.getElementById('unitToggleDilute');
+const unitBtnsDilute=unitToggleDilute.querySelectorAll('button');
+const modeFixedBtn=document.getElementById('modeDiluteFixed');
+const modeFinalBtn=document.getElementById('modeDiluteFinal');
+const calcDiluteBtn=document.getElementById('calcDiluteBtn');
+const waterAdd=document.getElementById('waterAdd');
+const finalVol=document.getElementById('finalVol');
+const correctedStrength=document.getElementById('correctedStrength');
+const tempNote=document.getElementById('tempNote');
+const spiritTaken=document.getElementById('spiritTaken');
+const waterTaken=document.getElementById('waterTaken');
+const contractionFactor=document.getElementById('contractionFactor');
+const contractStatus=document.getElementById('contractStatus');
+const contractNote=document.getElementById('contractNote');
+const contractDetail=document.getElementById('contractDetail');
+
+const distillVol=document.getElementById('distillVol');
+const distillStrength=document.getElementById('distillStrength');
+const distillTemp=document.getElementById('distillTemp');
+const headsPct=document.getElementById('headsPct');
+const tailsPct=document.getElementById('tailsPct');
+const bodyStrength=document.getElementById('bodyStrength');
+const unitToggleDistill=document.getElementById('unitToggleDistill');
+const unitBtnsDistill=unitToggleDistill.querySelectorAll('button');
+const calcDistillBtn=document.getElementById('calcDistillBtn');
+const headsOut=document.getElementById('headsOut');
+const bodyOut=document.getElementById('bodyOut');
+const tailsOut=document.getElementById('tailsOut');
+const bodyEq40=document.getElementById('bodyEq40');
+const distillNote=document.getElementById('distillNote');
+
+const measStrength=document.getElementById('measStrength');
+const measTemp=document.getElementById('measTemp');
+const calibTemp=document.getElementById('calibTemp');
+const calcCorrectBtn=document.getElementById('calcCorrectBtn');
+const correctedValue=document.getElementById('correctedValue');
+const measDisplay=document.getElementById('measDisplay');
+const trueDisplay=document.getElementById('trueDisplay');
+const correctionDisplay=document.getElementById('correctionDisplay');
+const formulaNote=document.getElementById('formulaNote');
+
+let currentUnitDilute='L';
+let currentUnitDistill='L';
+let diluteMode='fixed';
+let currentMode='dilute';
+let useContraction=true;
+
+function initContractToggle(containerId, callback) {
+const container=document.getElementById(containerId);
+const btns=container.querySelectorAll('button');
+btns.forEach(btn=>{
+btn.addEventListener('click',function(){
+btns.forEach(b=>b.classList.remove('active'));
+this.classList.add('active');
+useContraction=this.dataset.contract==='on';
+if(callback)callback();
+});
+});
+}
+initContractToggle('contractToggle', ()=>{if(currentMode==='dilute')calcDilution();});
+initContractToggle('contractToggleDistill', ()=>{if(currentMode==='distill')calcDistillation();});
+
+themeToggle.addEventListener('click',function(){
+body.classList.toggle('dark');
+this.textContent=body.classList.contains('dark')?'☀️ Светлая':'🌙 Тёмная';
+});
+
+modeButtons.forEach(btn=>{
+btn.addEventListener('click',function(){
+modeButtons.forEach(b=>b.classList.remove('active'));
+this.classList.add('active');
+currentMode=this.dataset.mode;
+dilutePanel.style.display=currentMode==='dilute'?'block':'none';
+distillPanel.style.display=currentMode==='distill'?'block':'none';
+correctPanel.style.display=currentMode==='correct'?'block':'none';
+if(currentMode==='correct')calcCorrection();
+});
+});
+
+unitBtnsDilute.forEach(btn=>{
+btn.addEventListener('click',function(){
+unitBtnsDilute.forEach(b=>b.classList.remove('active'));
+this.classList.add('active');
+currentUnitDilute=this.dataset.unit;
+});
+});
+unitBtnsDistill.forEach(btn=>{
+btn.addEventListener('click',function(){
+unitBtnsDistill.forEach(b=>b.classList.remove('active'));
+this.classList.add('active');
+currentUnitDistill=this.dataset.unit;
+});
+});
+
+function setDiluteMode(mode){
+diluteMode=mode;
+if(mode==='fixed'){
+modeFixedBtn.className='inline-btn active-mode';
+modeFinalBtn.className='inline-btn secondary';
+}else{
+modeFixedBtn.className='inline-btn secondary';
+modeFinalBtn.className='inline-btn active-mode';
+}
+}
+modeFixedBtn.addEventListener('click',function(){setDiluteMode('fixed');if(currentMode==='dilute')calcDilution();});
+modeFinalBtn.addEventListener('click',function(){setDiluteMode('target');if(currentMode==='dilute')calcDilution();});
+setDiluteMode('fixed');
+
+function correctByTemp(measured,tempCurr,tempCal=20){
+return measured-(tempCurr-tempCal)*0.3;
+}
+
+function getContractionFactor(strength){
+if(strength>60)return 0.94;
+if(strength>=40)return 0.96;
+return 0.98;
+}
+
+function calcDilution(){
+let vol=parseFloat(volumeInput.value);
+const strength=parseFloat(strengthInput.value);
+const target=parseFloat(targetInput.value);
+const temp=parseFloat(tempInput.value);
+let targetFinalVol=parseFloat(finalVolumeTarget.value);
+
+if(isNaN(vol)||vol<=0||isNaN(strength)||strength<=0||isNaN(target)||target<=0||target>=100){
+alert('Введите корректные значения (объём >0, крепость >0, цель <100%)');
+return;
+}
+if(strength<=target){
+alert('Крепость спирта должна быть выше желаемой.');
+return;
+}
+let volMl=(currentUnitDilute==='L')?vol*1000:vol;
+let finalTargetMl=(currentUnitDilute==='L')?targetFinalVol*1000:targetFinalVol;
+
+const correctedStr=correctByTemp(strength,temp,20);
+const k=useContraction?getContractionFactor(target):1;
+
+let waterToAdd=0;
+let finalVolMl=0;
+let spiritVol=volMl;
+
+if(diluteMode==='fixed'){
+waterToAdd=volMl*(correctedStr/target-1)*k;
+if(waterToAdd<0){alert('Невозможно разбавить');return;}
+finalVolMl=volMl+waterToAdd;
+}else{
+if(isNaN(finalTargetMl)||finalTargetMl<=0){
+alert('Укажите желаемый конечный объём.');
+return;
+}
+const denominator=1+(correctedStr/target-1)*k;
+spiritVol=finalTargetMl/denominator;
+waterToAdd=spiritVol*(correctedStr/target-1)*k;
+finalVolMl=spiritVol+waterToAdd;
+if(currentUnitDilute==='L'){
+volumeInput.value=(spiritVol/1000).toFixed(3);
+}else{
+volumeInput.value=spiritVol.toFixed(1);
+}
+}
+
+// ИСПРАВЛЕННАЯ ФОРМУЛА для реальной крепости
+let realStrength;
+if(useContraction){
+// С учётом контракции: реальный объём = итоговый объём * k
+const realVol = finalVolMl * k;
+realStrength = (spiritVol * correctedStr / 100) / realVol * 100;
+} else {
+realStrength = (spiritVol * correctedStr / 100) / finalVolMl * 100;
+}
+
+const unitStr=currentUnitDilute==='L'?'л':'мл';
+const displayVol=currentUnitDilute==='L'?finalVolMl/1000:finalVolMl;
+const displayWater=currentUnitDilute==='L'?waterToAdd/1000:waterToAdd;
+const displaySpirit=currentUnitDilute==='L'?spiritVol/1000:spiritVol;
+
+waterAdd.textContent=displayWater.toFixed(2)+' '+unitStr;
+finalVol.textContent=displayVol.toFixed(2)+' '+unitStr;
+correctedStrength.textContent=realStrength.toFixed(2)+'%';
+tempNote.textContent='🌡️ коррекция: '+strength+'% при '+temp+'°C → '+(correctedStr).toFixed(2)+'%';
+
+spiritTaken.textContent=displaySpirit.toFixed(2)+' '+unitStr;
+waterTaken.textContent=displayWater.toFixed(2)+' '+unitStr;
+
+if(useContraction){
+contractionFactor.textContent=k.toFixed(2);
+contractDetail.style.display='flex';
+contractStatus.textContent='учитывается (k='+k.toFixed(2)+')';
+}else{
+contractionFactor.textContent='—';
+contractDetail.style.display='none';
+contractStatus.textContent='НЕ учитывается';
+}
+}
+
+function calcDistillation(){
+let vol=parseFloat(distillVol.value);
+const strength=parseFloat(distillStrength.value);
+const temp=parseFloat(distillTemp.value);
+const headsP=parseFloat(headsPct.value);
+const tailsP=parseFloat(tailsPct.value);
+const bodyStr=parseFloat(bodyStrength.value);
+
+if(isNaN(vol)||vol<=0||isNaN(strength)||strength<=0||strength>100){
+alert('Введите корректный объём и крепость сырца');
+return;
+}
+if(isNaN(headsP)||headsP<0||headsP>30){alert('Головы 0-30%');return;}
+if(isNaN(tailsP)||tailsP<0||tailsP>40){alert('Хвосты 0-40%');return;}
+if(isNaN(bodyStr)||bodyStr<0||bodyStr>97){alert('Крепость тела 0-97%');return;}
+
+let volMl=(currentUnitDistill==='L')?vol*1000:vol;
+const correctedStr=correctByTemp(strength,temp,20);
+const absTotal=volMl*(correctedStr/100);
+
+const headsAbs=absTotal*(headsP/100);
+const headsVol=headsAbs/0.8;
+
+let remainingAbs=absTotal-headsAbs;
+const tailsAbs=absTotal*(tailsP/100);
+const bodyAbs=remainingAbs-tailsAbs;
+if(bodyAbs<0){
+alert('Слишком много хвостов, тело отрицательное.');
+return;
+}
+
+const k=useContraction?getContractionFactor(bodyStr):1;
+const bodyVol=(bodyAbs/(bodyStr/100))/k;
+const eq40=(bodyAbs/0.4)/k;
+const tailsVol=(tailsAbs/0.2)/k;
+
+const unitStr=currentUnitDistill==='L'?'л':'мл';
+const displayUnit=(val)=>{
+if(currentUnitDistill==='L')return (val/1000).toFixed(2)+' '+unitStr;
+return val.toFixed(1)+' '+unitStr;
+};
+
+headsOut.textContent=displayUnit(headsVol)+' (≈'+headsAbs.toFixed(1)+' а.с.)';
+bodyOut.textContent=displayUnit(bodyVol)+' (при '+bodyStr+'%)';
+tailsOut.textContent=displayUnit(tailsVol)+' (≈'+tailsAbs.toFixed(1)+' а.с.)';
+bodyEq40.textContent=displayUnit(eq40)+' (40%)';
+distillNote.textContent='⚙️ Коррекция: '+strength+'% при '+temp+'°C → '+correctedStr.toFixed(2)+'% | Головы '+headsP+'% от АС, хвосты '+tailsP+'% от АС'+(useContraction?' | Контракция учтена (k='+k.toFixed(2)+')':' | Контракция НЕ учтена');
+}
+
+function calcCorrection(){
+const meas=parseFloat(measStrength.value);
+const temp=parseFloat(measTemp.value);
+const calib=parseFloat(calibTemp.value);
+
+if(isNaN(meas)||meas<0||meas>100){
+alert('Введите корректную крепость (0-100%)');
+return;
+}
+if(isNaN(temp)||isNaN(calib)){
+alert('Введите корректную температуру');
+return;
+}
+
+const trueVal=correctByTemp(meas,temp,calib);
+const correction=trueVal-meas;
+
+correctedValue.textContent=trueVal.toFixed(2)+'%';
+measDisplay.textContent=meas.toFixed(1)+'% при '+temp.toFixed(1)+'°C';
+trueDisplay.textContent=trueVal.toFixed(2)+'%';
+correctionDisplay.textContent=(correction>=0?'+':'')+correction.toFixed(2)+'%';
+formulaNote.textContent='Формула: A_ист = '+meas.toFixed(1)+' − ('+temp.toFixed(1)+' − '+calib.toFixed(1)+') · 0.3 = '+trueVal.toFixed(2)+'%';
+}
+
+calcDiluteBtn.addEventListener('click',calcDilution);
+calcDistillBtn.addEventListener('click',calcDistillation);
+calcCorrectBtn.addEventListener('click',calcCorrection);
+
+document.querySelectorAll('#dilutePanel input, #distillPanel input, #correctPanel input').forEach(inp=>{
+inp.addEventListener('input',function(){
+if(this.closest('#dilutePanel')&&currentMode==='dilute')calcDilution();
+else if(this.closest('#distillPanel')&&currentMode==='distill')calcDistillation();
+else if(this.closest('#correctPanel')&&currentMode==='correct')calcCorrection();
+});
+});
+
+unitBtnsDistill.forEach(btn=>{
+btn.addEventListener('click',function(){
+if(currentMode==='distill')calcDistillation();
+});
+});
+
+window.addEventListener('load',function(){
+calcDilution();
+calcDistillation();
+calcCorrection();
+});
+})();
+</script>
+</body>
+</html>
