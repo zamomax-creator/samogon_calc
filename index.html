@@ -67,44 +67,8 @@ body.dark .contract-toggle{background:#1e232b}
 body.dark .contract-toggle button.active{background:#2f3845;color:#fff}
 .temp-note{font-size:.7rem;margin-top:3px}
 #diluteDetails,#distillResult,#correctResult{overflow-x:auto;-webkit-overflow-scrolling:touch}
-
-@media(max-width:600px){
-.app{padding:0}
-.card{padding:14px 12px;border-radius:18px}
-h1{font-size:1.2rem}
-.mode-toggle button{font-size:.65rem;padding:6px 3px}
-.input-group{margin-bottom:8px}
-.input-group label{font-size:.8rem}
-.input-row input,.input-row select{padding:6px 8px;font-size:.9rem;min-width:50px}
-.result-grid{grid-template-columns:1fr 1fr;gap:4px 8px}
-.stat-item{font-size:.8rem;padding:3px 0}
-.result-box{padding:10px 12px}
-.calc-btn{padding:10px;font-size:.95rem}
-.inline-btn{padding:4px 10px;font-size:.7rem}
-.unit-toggle button{padding:3px 8px;font-size:.7rem}
-.contract-toggle button{padding:3px 8px;font-size:.7rem}
-.big-result{font-size:1rem}
-.subnote{font-size:.65rem}
-.flex{gap:4px}
-#diluteDetails .result-detail{font-size:.75rem}
-}
-
-@media(max-width:400px){
-.card{padding:10px 8px;border-radius:14px}
-h1{font-size:1rem}
-.mode-toggle{flex-wrap:nowrap;overflow-x:auto}
-.mode-toggle button{font-size:.6rem;padding:4px 2px;flex:0 0 auto}
-.result-grid{grid-template-columns:1fr 1fr}
-.stat-item{font-size:.7rem;flex-wrap:wrap}
-.stat-item .stat-value{font-size:.7rem}
-.input-row input,.input-row select{padding:5px 6px;font-size:.8rem;min-width:40px}
-.calc-btn{padding:8px;font-size:.85rem}
-.inline-btn{padding:3px 8px;font-size:.65rem}
-.unit-toggle button{padding:2px 6px;font-size:.6rem}
-.contract-toggle button{padding:2px 6px;font-size:.6rem}
-.result-box{padding:8px 10px}
-#diluteDetails .result-detail{font-size:.65rem;padding:3px 0}
-}
+@media(max-width:600px){.app{padding:0}.card{padding:14px 12px;border-radius:18px}h1{font-size:1.2rem}.mode-toggle button{font-size:.65rem;padding:6px 3px}.input-group{margin-bottom:8px}.input-group label{font-size:.8rem}.input-row input,.input-row select{padding:6px 8px;font-size:.9rem;min-width:50px}.result-grid{grid-template-columns:1fr 1fr;gap:4px 8px}.stat-item{font-size:.8rem;padding:3px 0}.result-box{padding:10px 12px}.calc-btn{padding:10px;font-size:.95rem}.inline-btn{padding:4px 10px;font-size:.7rem}.unit-toggle button{padding:3px 8px;font-size:.7rem}.contract-toggle button{padding:3px 8px;font-size:.7rem}.big-result{font-size:1rem}.subnote{font-size:.65rem}.flex{gap:4px}#diluteDetails .result-detail{font-size:.75rem}}
+@media(max-width:400px){.card{padding:10px 8px;border-radius:14px}h1{font-size:1rem}.mode-toggle{flex-wrap:nowrap;overflow-x:auto}.mode-toggle button{font-size:.6rem;padding:4px 2px;flex:0 0 auto}.result-grid{grid-template-columns:1fr 1fr}.stat-item{font-size:.7rem;flex-wrap:wrap}.stat-item .stat-value{font-size:.7rem}.input-row input,.input-row select{padding:5px 6px;font-size:.8rem;min-width:40px}.calc-btn{padding:8px;font-size:.85rem}.inline-btn{padding:3px 8px;font-size:.65rem}.unit-toggle button{padding:2px 6px;font-size:.6rem}.contract-toggle button{padding:2px 6px;font-size:.6rem}.result-box{padding:8px 10px}#diluteDetails .result-detail{font-size:.65rem;padding:3px 0}}
 </style>
 </head>
 <body>
@@ -359,7 +323,10 @@ let finalVolMl=0;
 let spiritVol=volMl;
 
 if(diluteMode==='fixed'){
-waterToAdd=volMl*(correctedStr/target-1)*k;
+// ИСПРАВЛЕННАЯ ФОРМУЛА С КОНТРАКЦИЕЙ
+// Без контракции: V_воды = V_спирта × (C_нач/C_жел - 1)
+// С контракцией:   V_воды = V_спирта × (C_нач/C_жел - 1) / k
+waterToAdd = volMl * (correctedStr / target - 1) / k;
 if(waterToAdd<0){alert('Невозможно разбавить');return;}
 finalVolMl=volMl+waterToAdd;
 }else{
@@ -367,10 +334,13 @@ if(isNaN(finalTargetMl)||finalTargetMl<=0){
 alert('Укажите желаемый конечный объём.');
 return;
 }
-const denominator=1+(correctedStr/target-1)*k;
-spiritVol=finalTargetMl/denominator;
-waterToAdd=spiritVol*(correctedStr/target-1)*k;
-finalVolMl=spiritVol+waterToAdd;
+// Для режима "Задать объём" тоже корректируем
+// Нужно найти сколько спирта взять, чтобы с учётом контракции получить finalTargetMl
+// V_спирта = V_итог / (1 + (C_нач/C_жел - 1) / k)
+const denominator = 1 + (correctedStr / target - 1) / k;
+spiritVol = finalTargetMl / denominator;
+waterToAdd = spiritVol * (correctedStr / target - 1) / k;
+finalVolMl = spiritVol + waterToAdd;
 if(currentUnitDilute==='L'){
 volumeInput.value=(spiritVol/1000).toFixed(3);
 }else{
@@ -378,15 +348,8 @@ volumeInput.value=spiritVol.toFixed(1);
 }
 }
 
-// ИСПРАВЛЕННАЯ ФОРМУЛА для реальной крепости
-let realStrength;
-if(useContraction){
-// С учётом контракции: реальный объём = итоговый объём * k
-const realVol = finalVolMl * k;
-realStrength = (spiritVol * correctedStr / 100) / realVol * 100;
-} else {
-realStrength = (spiritVol * correctedStr / 100) / finalVolMl * 100;
-}
+// Проверка крепости (должна быть ровно target)
+const realStrength = (spiritVol * correctedStr / 100) / (finalVolMl * (useContraction ? k : 1)) * 100;
 
 const unitStr=currentUnitDilute==='L'?'л':'мл';
 const displayVol=currentUnitDilute==='L'?finalVolMl/1000:finalVolMl;
