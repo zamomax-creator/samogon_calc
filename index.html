@@ -60,15 +60,10 @@ body.dark .note{color:#8a9eb0}
 .result-detail:last-child{border-bottom:0}
 .big-result{font-size:1.2rem;font-weight:700;color:#1a3a5a;text-align:center;padding:6px 0}
 body.dark .big-result{color:#8ab0e0}
-.contract-toggle{display:flex;gap:3px;background:#eef2f7;border-radius:30px;padding:3px}
-.contract-toggle button{border:none;background:0 0;padding:4px 10px;border-radius:20px;font-weight:500;cursor:pointer;color:#2c3e50;font-size:.7rem}
-.contract-toggle button.active{background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.05)}
-body.dark .contract-toggle{background:#1e232b}
-body.dark .contract-toggle button.active{background:#2f3845;color:#fff}
 .temp-note{font-size:.7rem;margin-top:3px}
 #diluteDetails,#distillResult,#correctResult{overflow-x:auto;-webkit-overflow-scrolling:touch}
-@media(max-width:600px){.app{padding:0}.card{padding:14px 12px;border-radius:18px}h1{font-size:1.2rem}.mode-toggle button{font-size:.65rem;padding:6px 3px}.input-group{margin-bottom:8px}.input-group label{font-size:.8rem}.input-row input,.input-row select{padding:6px 8px;font-size:.9rem;min-width:50px}.result-grid{grid-template-columns:1fr 1fr;gap:4px 8px}.stat-item{font-size:.8rem;padding:3px 0}.result-box{padding:10px 12px}.calc-btn{padding:10px;font-size:.95rem}.inline-btn{padding:4px 10px;font-size:.7rem}.unit-toggle button{padding:3px 8px;font-size:.7rem}.contract-toggle button{padding:3px 8px;font-size:.7rem}.big-result{font-size:1rem}.subnote{font-size:.65rem}.flex{gap:4px}#diluteDetails .result-detail{font-size:.75rem}}
-@media(max-width:400px){.card{padding:10px 8px;border-radius:14px}h1{font-size:1rem}.mode-toggle{flex-wrap:nowrap;overflow-x:auto}.mode-toggle button{font-size:.6rem;padding:4px 2px;flex:0 0 auto}.result-grid{grid-template-columns:1fr 1fr}.stat-item{font-size:.7rem;flex-wrap:wrap}.stat-item .stat-value{font-size:.7rem}.input-row input,.input-row select{padding:5px 6px;font-size:.8rem;min-width:40px}.calc-btn{padding:8px;font-size:.85rem}.inline-btn{padding:3px 8px;font-size:.65rem}.unit-toggle button{padding:2px 6px;font-size:.6rem}.contract-toggle button{padding:2px 6px;font-size:.6rem}.result-box{padding:8px 10px}#diluteDetails .result-detail{font-size:.65rem;padding:3px 0}}
+@media(max-width:600px){.app{padding:0}.card{padding:14px 12px;border-radius:18px}h1{font-size:1.2rem}.mode-toggle button{font-size:.65rem;padding:6px 3px}.input-group{margin-bottom:8px}.input-group label{font-size:.8rem}.input-row input,.input-row select{padding:6px 8px;font-size:.9rem;min-width:50px}.result-grid{grid-template-columns:1fr 1fr;gap:4px 8px}.stat-item{font-size:.8rem;padding:3px 0}.result-box{padding:10px 12px}.calc-btn{padding:10px;font-size:.95rem}.inline-btn{padding:4px 10px;font-size:.7rem}.unit-toggle button{padding:3px 8px;font-size:.7rem}.big-result{font-size:1rem}.subnote{font-size:.65rem}.flex{gap:4px}#diluteDetails .result-detail{font-size:.75rem}}
+@media(max-width:400px){.card{padding:10px 8px;border-radius:14px}h1{font-size:1rem}.mode-toggle{flex-wrap:nowrap;overflow-x:auto}.mode-toggle button{font-size:.6rem;padding:4px 2px;flex:0 0 auto}.result-grid{grid-template-columns:1fr 1fr}.stat-item{font-size:.7rem;flex-wrap:wrap}.stat-item .stat-value{font-size:.7rem}.input-row input,.input-row select{padding:5px 6px;font-size:.8rem;min-width:40px}.calc-btn{padding:8px;font-size:.85rem}.inline-btn{padding:3px 8px;font-size:.65rem}.unit-toggle button{padding:2px 6px;font-size:.6rem}.result-box{padding:8px 10px}#diluteDetails .result-detail{font-size:.65rem;padding:3px 0}}
 </style>
 </head>
 <body>
@@ -83,13 +78,13 @@ body.dark .contract-toggle button.active{background:#2f3845;color:#fff}
 
 <div id="dilutePanel">
 <div class="input-group"><label>Объём спирта</label><div class="input-row">
-<input type="number" id="volumeInput" step="any" value="3" min="0">
+<input type="number" id="volumeInput" step="any" value="5" min="0">
 <div class="unit-toggle" id="unitToggleDilute"><button class="active" data-unit="L">Л</button><button data-unit="mL">мл</button></div>
 </div></div>
 <div class="input-group"><label>Крепость спирта (%)</label><input type="number" id="strengthInput" step="any" value="92" min="0" max="100"></div>
 <div class="input-group"><label>Температура спирта (°C) — коррекция</label><input type="number" id="tempInput" step="any" value="20" min="-10" max="50"></div>
 <div class="input-group"><label>Желаемая крепость (%)</label><input type="number" id="targetInput" step="any" value="40" min="0" max="100"></div>
-<div class="input-group"><label>Желаемый конечный объём (л или мл)</label><input type="number" id="finalVolumeTarget" step="any" value="1" min="0.01"></div>
+<div class="input-group"><label>Желаемый конечный объём (л или мл)</label><input type="number" id="finalVolumeTarget" step="any" value="11.5" min="0.01"></div>
 <div class="flex" style="gap:8px;margin-top:3px;flex-wrap:wrap">
 <span style="font-weight:500;font-size:.8rem">Режим:</span>
 <button id="modeDiluteFixed" class="inline-btn active-mode">Фикс. объём</button>
@@ -108,7 +103,7 @@ body.dark .contract-toggle button.active{background:#2f3845;color:#fff}
 <div class="result-detail"><span>Контракция</span><span id="contractionInfo">—</span></div>
 </div>
 <div style="margin-top:6px;font-size:.75rem;background:#eef4fa;padding:4px 10px;border-radius:30px;display:inline-block" id="tempNote">🌡️ коррекция по 20°C</div>
-<div class="note">* контракция рассчитывается через плотности (табличные данные)</div>
+<div class="note">* контракция рассчитывается через плотности по ГОСТ 3639-79</div>
 </div>
 </div>
 
@@ -153,34 +148,109 @@ body.dark .contract-toggle button.active{background:#2f3845;color:#fff}
 
 <script>
 (function(){
-// ===== ТАБЛИЦА ПЛОТНОСТЕЙ (кг/л) при 20°C =====
+// ===== ТАБЛИЦА ПЛОТНОСТЕЙ ПО ГОСТ 3639-79 (г/см³ при 20°C) =====
 const densityTable = [
-  { strength: 0,   density: 0.998 },
-  { strength: 5,   density: 0.989 },
-  { strength: 10,  density: 0.982 },
-  { strength: 15,  density: 0.976 },
-  { strength: 20,  density: 0.969 },
-  { strength: 25,  density: 0.961 },
-  { strength: 30,  density: 0.954 },
-  { strength: 35,  density: 0.946 },
-  { strength: 40,  density: 0.948 },
-  { strength: 45,  density: 0.939 },
-  { strength: 50,  density: 0.930 },
-  { strength: 55,  density: 0.921 },
-  { strength: 60,  density: 0.913 },
-  { strength: 65,  density: 0.904 },
-  { strength: 70,  density: 0.891 },
-  { strength: 75,  density: 0.879 },
-  { strength: 80,  density: 0.865 },
-  { strength: 85,  density: 0.849 },
-  { strength: 90,  density: 0.834 },
-  { strength: 92,  density: 0.828 },
-  { strength: 95,  density: 0.816 },
-  { strength: 96,  density: 0.812 },
-  { strength: 97,  density: 0.807 },
-  { strength: 98,  density: 0.802 },
-  { strength: 99,  density: 0.797 },
-  { strength: 100, density: 0.789 }
+  { strength: 0,   density: 1.19224 },
+  { strength: 1,   density: 1.18604 },
+  { strength: 2,   density: 1.17988 },
+  { strength: 3,   density: 1.17376 },
+  { strength: 4,   density: 1.16768 },
+  { strength: 5,   density: 1.16164 },
+  { strength: 6,   density: 1.15564 },
+  { strength: 7,   density: 1.14968 },
+  { strength: 8,   density: 1.14376 },
+  { strength: 9,   density: 1.13788 },
+  { strength: 10,  density: 1.13204 },
+  { strength: 11,  density: 1.12624 },
+  { strength: 12,  density: 1.12048 },
+  { strength: 13,  density: 1.11476 },
+  { strength: 14,  density: 1.10908 },
+  { strength: 15,  density: 1.10344 },
+  { strength: 16,  density: 1.09784 },
+  { strength: 17,  density: 1.09228 },
+  { strength: 18,  density: 1.08676 },
+  { strength: 19,  density: 1.08128 },
+  { strength: 20,  density: 1.07584 },
+  { strength: 21,  density: 1.07044 },
+  { strength: 22,  density: 1.06508 },
+  { strength: 23,  density: 1.05976 },
+  { strength: 24,  density: 1.05448 },
+  { strength: 25,  density: 1.04924 },
+  { strength: 26,  density: 1.04404 },
+  { strength: 27,  density: 1.03888 },
+  { strength: 28,  density: 1.03376 },
+  { strength: 29,  density: 1.02868 },
+  { strength: 30,  density: 1.02364 },
+  { strength: 31,  density: 1.01864 },
+  { strength: 32,  density: 1.01368 },
+  { strength: 33,  density: 1.00876 },
+  { strength: 34,  density: 1.00388 },
+  { strength: 35,  density: 0.99904 },
+  { strength: 36,  density: 0.99424 },
+  { strength: 37,  density: 0.98948 },
+  { strength: 38,  density: 0.98476 },
+  { strength: 39,  density: 0.98008 },
+  { strength: 40,  density: 0.97544 },
+  { strength: 41,  density: 0.97084 },
+  { strength: 42,  density: 0.96628 },
+  { strength: 43,  density: 0.96176 },
+  { strength: 44,  density: 0.95728 },
+  { strength: 45,  density: 0.95284 },
+  { strength: 46,  density: 0.94844 },
+  { strength: 47,  density: 0.94408 },
+  { strength: 48,  density: 0.93976 },
+  { strength: 49,  density: 0.93548 },
+  { strength: 50,  density: 0.93124 },
+  { strength: 51,  density: 0.92704 },
+  { strength: 52,  density: 0.92288 },
+  { strength: 53,  density: 0.91876 },
+  { strength: 54,  density: 0.91468 },
+  { strength: 55,  density: 0.91064 },
+  { strength: 56,  density: 0.90664 },
+  { strength: 57,  density: 0.90268 },
+  { strength: 58,  density: 0.89876 },
+  { strength: 59,  density: 0.89488 },
+  { strength: 60,  density: 0.89104 },
+  { strength: 61,  density: 0.88724 },
+  { strength: 62,  density: 0.88348 },
+  { strength: 63,  density: 0.87976 },
+  { strength: 64,  density: 0.87608 },
+  { strength: 65,  density: 0.87244 },
+  { strength: 66,  density: 0.86884 },
+  { strength: 67,  density: 0.86528 },
+  { strength: 68,  density: 0.86176 },
+  { strength: 69,  density: 0.85828 },
+  { strength: 70,  density: 0.85484 },
+  { strength: 71,  density: 0.85144 },
+  { strength: 72,  density: 0.84808 },
+  { strength: 73,  density: 0.84476 },
+  { strength: 74,  density: 0.84148 },
+  { strength: 75,  density: 0.83824 },
+  { strength: 76,  density: 0.83504 },
+  { strength: 77,  density: 0.83188 },
+  { strength: 78,  density: 0.82876 },
+  { strength: 79,  density: 0.82568 },
+  { strength: 80,  density: 0.82264 },
+  { strength: 81,  density: 0.81964 },
+  { strength: 82,  density: 0.81668 },
+  { strength: 83,  density: 0.81376 },
+  { strength: 84,  density: 0.81088 },
+  { strength: 85,  density: 0.80804 },
+  { strength: 86,  density: 0.80524 },
+  { strength: 87,  density: 0.80248 },
+  { strength: 88,  density: 0.79976 },
+  { strength: 89,  density: 0.79708 },
+  { strength: 90,  density: 0.79444 },
+  { strength: 91,  density: 0.79184 },
+  { strength: 92,  density: 0.78928 },
+  { strength: 93,  density: 0.78676 },
+  { strength: 94,  density: 0.78428 },
+  { strength: 95,  density: 0.78184 },
+  { strength: 96,  density: 0.77944 },
+  { strength: 97,  density: 0.77708 },
+  { strength: 98,  density: 0.77476 },
+  { strength: 99,  density: 0.77248 },
+  { strength: 100, density: 0.77024 }
 ];
 
 // ===== Интерполяция плотности =====
@@ -192,7 +262,6 @@ function getDensity(strength) {
     const cur = densityTable[i];
     const next = densityTable[i + 1];
     if (strength >= cur.strength && strength <= next.strength) {
-      // Линейная интерполяция
       const t = (strength - cur.strength) / (next.strength - cur.strength);
       return cur.density + t * (next.density - cur.density);
     }
@@ -200,36 +269,41 @@ function getDensity(strength) {
   return densityTable[densityTable.length - 1].density;
 }
 
-// ===== РАСЧЁТ РАЗБАВЛЕНИЯ ЧЕРЕЗ ПЛОТНОСТИ =====
+// ===== РАСЧЁТ РАЗБАВЛЕНИЯ ПО ГОСТ 3639-79 =====
 function calcDilutionByDensity(V_start, C_start, C_target) {
-  // 1. Плотность исходного спирта
+  // V_start - объём исходного спирта в литрах при 20°C
+  // C_start, C_target - объёмные проценты
+  
+  // 1. Плотность исходного раствора при 20°C (г/см³ = кг/л)
   const rho_start = getDensity(C_start);
   
-  // 2. Масса исходного спирта
+  // 2. Масса исходного раствора (кг)
   const m_start = V_start * rho_start;
   
-  // 3. Масса абсолютного спирта
-  const m_ethanol = m_start * (C_start / 100);
+  // 3. Масса абсолютного спирта (кг)
+  // Плотность абсолютного спирта при 20°C = 0.78927 г/см³
+  const rho_ethanol = 0.78927;
+  const V_ethanol = V_start * (C_start / 100);
+  const m_ethanol = V_ethanol * rho_ethanol;
   
-  // 4. Масса воды в исходном спирте
+  // 4. Масса воды в исходном растворе (кг)
   const m_water_in_start = m_start - m_ethanol;
   
-  // 5. Нужная масса абсолютного спирта в конечном растворе (та же)
-  // C_target = m_ethanol / m_final * 100
-  // m_final = m_ethanol / (C_target / 100)
-  const m_final = m_ethanol / (C_target / 100);
+  // 5. Объём абсолютного спирта в конечном растворе (тот же)
+  // C_target = V_ethanol / V_final * 100
+  const V_final = V_ethanol / (C_target / 100);
   
-  // 6. Масса воды, которую нужно добавить
-  const m_water_add = m_final - m_start;
-  
-  // 7. Плотность конечного раствора
+  // 6. Плотность конечного раствора
   const rho_final = getDensity(C_target);
   
-  // 8. Итоговый объём
-  const V_final = m_final / rho_final;
+  // 7. Масса конечного раствора (кг)
+  const m_final = V_final * rho_final;
   
-  // 9. Объём воды (при 20°C плотность воды ≈ 0.998 кг/л)
-  const V_water_add = m_water_add / 0.998;
+  // 8. Масса воды, которую нужно добавить (кг)
+  const m_water_add = m_final - m_start;
+  
+  // 9. Объём воды при 20°C (плотность воды ≈ 0.9982 кг/л)
+  const V_water_add = m_water_add / 0.9982;
   
   // 10. Контракция (усадка) в процентах
   const contraction = (1 - V_final / (V_start + V_water_add)) * 100;
@@ -242,7 +316,8 @@ function calcDilutionByDensity(V_start, C_start, C_target) {
     rho_start: rho_start,
     rho_final: rho_final,
     contraction: contraction,
-    m_ethanol: m_ethanol
+    m_ethanol: m_ethanol,
+    V_ethanol: V_ethanol
   };
 }
 
@@ -369,6 +444,10 @@ return;
 }
 
 const correctedStr=correctByTemp(strength,temp,20);
+if(correctedStr <= target){
+alert('Скорректированная крепость должна быть выше желаемой.');
+return;
+}
 
 let volL = (currentUnitDilute==='L') ? vol : vol / 1000;
 let finalTargetL = (currentUnitDilute==='L') ? targetFinalVol : targetFinalVol / 1000;
@@ -377,9 +456,8 @@ let result;
 if(diluteMode==='fixed'){
 result = calcDilutionByDensity(volL, correctedStr, target);
 }else{
-// Режим "Задать объём": подбором находим нужный объём спирта
-// Бинарный поиск
-let lo = 0, hi = finalTargetL;
+// Режим "Задать объём": бинарный поиск
+let lo = 0, hi = finalTargetL * 2;
 for(let iter = 0; iter < 100; iter++){
 let mid = (lo + hi) / 2;
 let r = calcDilutionByDensity(mid, correctedStr, target);
@@ -391,7 +469,6 @@ hi = mid;
 }
 let spiritVol = (lo + hi) / 2;
 result = calcDilutionByDensity(spiritVol, correctedStr, target);
-// Обновляем поле объёма
 if(currentUnitDilute==='L'){
 volumeInput.value = spiritVol.toFixed(3);
 }else{
