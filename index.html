@@ -302,6 +302,7 @@ function calcDilutionByDensity(V_start, C_start, C_target) {
   const contraction = (1 - V_final_real / V_final_theoretical) * 100;
 
   return {
+    V_start: V_start,
     V_water_add: V_water_add,
     V_final: V_final_real,  // ← РЕАЛЬНЫЙ объем!
     contraction: contraction,  // ← ПРАВИЛЬНАЯ контракция!
