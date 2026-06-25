@@ -62,15 +62,8 @@ body.dark .note{color:#8a9eb0}
 body.dark .big-result{color:#8ab0e0}
 .temp-note{font-size:.7rem;margin-top:3px}
 #diluteDetails,#distillResult,#correctResult{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.compare-box{margin-top:8px;background:#eef4fa;padding:8px 12px;border-radius:12px;border-left:3px solid #2b4c7c}
-.compare-box .label{font-weight:600;font-size:.8rem;color:#2b4c7c;margin-bottom:4px}
-.compare-item{display:flex;justify-content:space-between;padding:3px 0;font-size:.8rem;gap:8px}
-.compare-item .val{font-weight:600}
-.compare-item .sub{font-size:.7rem;font-weight:400;opacity:.7}
-body.dark .compare-box{background:#1e2a3a;border-left-color:#6a8cff}
-body.dark .compare-box .label{color:#8ab0e0}
-@media(max-width:600px){.app{padding:0}.card{padding:14px 12px;border-radius:18px}h1{font-size:1.2rem}.mode-toggle button{font-size:.65rem;padding:6px 3px}.input-group{margin-bottom:8px}.input-group label{font-size:.8rem}.input-row input,.input-row select{padding:6px 8px;font-size:.9rem;min-width:50px}.result-grid{grid-template-columns:1fr 1fr;gap:4px 8px}.stat-item{font-size:.8rem;padding:3px 0}.result-box{padding:10px 12px}.calc-btn{padding:10px;font-size:.95rem}.inline-btn{padding:4px 10px;font-size:.7rem}.unit-toggle button{padding:3px 8px;font-size:.7rem}.big-result{font-size:1rem}.subnote{font-size:.65rem}.flex{gap:4px}#diluteDetails .result-detail{font-size:.75rem}.compare-item{font-size:.7rem}}
-@media(max-width:400px){.card{padding:10px 8px;border-radius:14px}h1{font-size:1rem}.mode-toggle{flex-wrap:nowrap;overflow-x:auto}.mode-toggle button{font-size:.6rem;padding:4px 2px;flex:0 0 auto}.result-grid{grid-template-columns:1fr 1fr}.stat-item{font-size:.7rem;flex-wrap:wrap}.stat-item .stat-value{font-size:.7rem}.input-row input,.input-row select{padding:5px 6px;font-size:.8rem;min-width:40px}.calc-btn{padding:8px;font-size:.85rem}.inline-btn{padding:3px 8px;font-size:.65rem}.unit-toggle button{padding:2px 6px;font-size:.6rem}.result-box{padding:8px 10px}#diluteDetails .result-detail{font-size:.65rem;padding:3px 0}.compare-item{font-size:.65rem}}
+@media(max-width:600px){.app{padding:0}.card{padding:14px 12px;border-radius:18px}h1{font-size:1.2rem}.mode-toggle button{font-size:.65rem;padding:6px 3px}.input-group{margin-bottom:8px}.input-group label{font-size:.8rem}.input-row input,.input-row select{padding:6px 8px;font-size:.9rem;min-width:50px}.result-grid{grid-template-columns:1fr 1fr;gap:4px 8px}.stat-item{font-size:.8rem;padding:3px 0}.result-box{padding:10px 12px}.calc-btn{padding:10px;font-size:.95rem}.inline-btn{padding:4px 10px;font-size:.7rem}.unit-toggle button{padding:3px 8px;font-size:.7rem}.big-result{font-size:1rem}.subnote{font-size:.65rem}.flex{gap:4px}#diluteDetails .result-detail{font-size:.75rem}}
+@media(max-width:400px){.card{padding:10px 8px;border-radius:14px}h1{font-size:1rem}.mode-toggle{flex-wrap:nowrap;overflow-x:auto}.mode-toggle button{font-size:.6rem;padding:4px 2px;flex:0 0 auto}.result-grid{grid-template-columns:1fr 1fr}.stat-item{font-size:.7rem;flex-wrap:wrap}.stat-item .stat-value{font-size:.7rem}.input-row input,.input-row select{padding:5px 6px;font-size:.8rem;min-width:40px}.calc-btn{padding:8px;font-size:.85rem}.inline-btn{padding:3px 8px;font-size:.65rem}.unit-toggle button{padding:2px 6px;font-size:.6rem}.result-box{padding:8px 10px}#diluteDetails .result-detail{font-size:.65rem;padding:3px 0}}
 </style>
 </head>
 <body>
@@ -108,12 +101,6 @@ body.dark .compare-box .label{color:#8ab0e0}
 <div class="result-detail"><span>Спирта берём</span><span id="spiritTaken">0 мл</span></div>
 <div class="result-detail"><span>Воды берём</span><span id="waterTaken">0 мл</span></div>
 <div class="result-detail"><span>Контракция</span><span id="contractionInfo">—</span></div>
-</div>
-<div class="compare-box" id="compareBox">
-<div class="label">📊 Сравнение способов разбавления</div>
-<div class="compare-item"><span>С учётом контракции</span><span class="val" id="compareWithContract">—</span></div>
-<div class="compare-item"><span>Без учёта контракции</span><span class="val" id="compareWithoutContract">—</span></div>
-<div class="compare-item" style="border-top:1px dashed #ccc;margin-top:2px;padding-top:4px"><span>Разница</span><span class="val" id="compareDiff">—</span></div>
 </div>
 <div style="margin-top:6px;font-size:.75rem;background:#eef4fa;padding:4px 10px;border-radius:30px;display:inline-block" id="tempNote">🌡️ коррекция по 20°C</div>
 <div class="note">* контракция рассчитывается через плотности (табличные данные)</div>
@@ -283,54 +270,44 @@ function calcDilutionByDensity(V_start, C_start, C_target) {
 
   const rho_start = getDensity(C_start);
   const rho_final = getDensity(C_target);
+  const rho_ethanol = 0.7893;  // плотность этанола
+  const rho_water = 0.9982;    // плотность воды при 20°C
 
-  // Абсолютный спирт (литры)
-  const A = V_start * (C_start / 100);
-
-  // Конечный объём раствора нужной крепости
-  const V_final = A / (C_target / 100);
-
-  // Массы растворов
+  // 1️⃣ Объем чистого спирта (этанола)
+  const V_ethanol = V_start * (C_start / 100);
+  
+  // 2️⃣ Масса компонентов в исходном спирте
   const m_start = V_start * rho_start;
-  const m_final = V_final * rho_final;
+  const m_ethanol = V_ethanol * rho_ethanol;
+  const m_water_in_start = m_start - m_ethanol;
 
-  // Добавляемая вода
-  const rho_water = 0.9982;
+  // 3️⃣ Нужная масса спирта в конечном растворе
+  // Такая же, как в исходном!
+  // m_ethanol остается неизменным
+
+  // 4️⃣ Вычисляем нужную массу конечного раствора
+  // C_target = m_ethanol / m_final * 100
+  // m_final = m_ethanol / (C_target / 100)
+  const m_final = m_ethanol / (C_target / 100);
+
+  // 5️⃣ Нужная масса добавленной воды
   const m_water_add = m_final - m_start;
   const V_water_add = m_water_add / rho_water;
 
-// Итерационная корректировка воды
-let water = V_water_add;
+  // 6️⃣ Реальный объем конечного раствора (с контракцией!)
+  const V_final_real = m_final / rho_final;
 
-for (let i = 0; i < 10; i++) {
+  // 7️⃣ Контракция (разница между теоретическим и реальным объемом)
+  const V_final_theoretical = V_start + V_water_add;  // БЕЗ контракции
+  const contraction = (1 - V_final_real / V_final_theoretical) * 100;
 
-    const totalBeforeMix = V_start + water;
-
-    const contraction =
-        (1 - V_final / totalBeforeMix);
-
-    const error =
-        (A / V_final) -
-        (C_target / 100);
-
-    if (Math.abs(error) < 0.00001) break;
-
-    water += error * 20;
-}
-
-  // Контракция
-  const totalBeforeMix = V_start + water;
-
-const contraction =
-    (1 - V_final / totalBeforeMix) * 100;
-
-return {
-    V_water_add: water,
-    V_final,
-    contraction,
-    rho_start,
-    rho_final
-};
+  return {
+    V_water_add: V_water_add,
+    V_final: V_final_real,  // ← РЕАЛЬНЫЙ объем!
+    contraction: contraction,  // ← ПРАВИЛЬНАЯ контракция!
+    rho_start: rho_start,
+    rho_final: rho_final
+  };
 }
 
 // ===== РАСЧЁТ БЕЗ КОНТРАКЦИИ (простая формула) =====
@@ -394,9 +371,6 @@ const tempNote=document.getElementById('tempNote');
 const spiritTaken=document.getElementById('spiritTaken');
 const waterTaken=document.getElementById('waterTaken');
 const contractionInfo=document.getElementById('contractionInfo');
-const compareWithContract=document.getElementById('compareWithContract');
-const compareWithoutContract=document.getElementById('compareWithoutContract');
-const compareDiff=document.getElementById('compareDiff');
 
 const distillVol=document.getElementById('distillVol');
 const distillStrength=document.getElementById('distillStrength');
@@ -498,12 +472,11 @@ const correctedStr=correctByTemp(strength,temp,20);
 
 let volL = (currentUnitDilute==='L') ? vol : vol / 1000;
 let finalTargetL = (currentUnitDilute==='L') ? targetFinalVol : targetFinalVol / 1000;
-let result, simple, displaySpirit, displayWater, displayFinal;
+let result, displaySpirit, displayWater, displayFinal;
 
 if(diluteMode==='fixed'){
 // РЕЖИМ "ФИКС. ОБЪЁМ"
 result = calcDilutionByDensity(volL, correctedStr, target);
-simple = calcDilutionSimple(volL, correctedStr, target);
 displaySpirit = volL;
 displayWater = result.V_water_add;
 displayFinal = result.V_final;
@@ -515,7 +488,6 @@ return;
 }
 const targetRes = calcForTargetVolume(finalTargetL, correctedStr, target);
 result = targetRes.resultWith;
-simple = targetRes.resultWithout;
 displaySpirit = result.V_start;
 displayWater = result.V_water_add;
 displayFinal = result.V_final;
@@ -541,18 +513,6 @@ tempNote.textContent='🌡️ коррекция: '+strength+'% при '+temp+'�
 spiritTaken.textContent=dispSpirit.toFixed(2)+' '+unitStr;
 waterTaken.textContent=dispWater.toFixed(2)+' '+unitStr;
 contractionInfo.textContent=result.contraction.toFixed(2)+'% (усадка)';
-
-// === ВЫВОД СРАВНЕНИЯ ===
-const simpleSpirit = currentUnitDilute==='L' ? simple.V_start : simple.V_start * 1000;
-const simpleWater = currentUnitDilute==='L' ? simple.V_water_add : simple.V_water_add * 1000;
-const simpleFinal = currentUnitDilute==='L' ? simple.V_final : simple.V_final * 1000;
-
-compareWithContract.textContent = dispSpirit.toFixed(2) + ' сп. + ' + dispWater.toFixed(2) + ' вод. → ' + dispFinal.toFixed(2) + ' ' + unitStr;
-compareWithoutContract.textContent = simpleSpirit.toFixed(2) + ' сп. + ' + simpleWater.toFixed(2) + ' вод. → ' + simpleFinal.toFixed(2) + ' ' + unitStr;
-
-const diffWater = Math.abs(dispWater - simpleWater);
-const diffFinal = Math.abs(dispFinal - simpleFinal);
-compareDiff.textContent = 'Воды: ' + diffWater.toFixed(2) + ' ' + unitStr + ', объём: ' + diffFinal.toFixed(2) + ' ' + unitStr;
 }
 
 function calcDistillation(){
