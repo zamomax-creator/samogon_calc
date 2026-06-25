@@ -264,18 +264,18 @@ const densityTableGOST_Full = [
 
 // ===== Интерполяция плотности =====
 function getDensity(strength) {
-  if (strength <= 0) return densityTable[0].density;
-  if (strength >= 96) return densityTable[densityTable.length - 1].density;
+  if (strength <= 0) return densityTableGOST_Full[0].density;
+  if (strength >= 96) return densityTableGOST_Full[densityTableGOST_Full.length - 1].density;
   
-  for (let i = 0; i < densityTable.length - 1; i++) {
-    const cur = densityTable[i];
-    const next = densityTable[i + 1];
+  for (let i = 0; i < densityTableGOST_Full.length - 1; i++) {
+    const cur = densityTableGOST_Full[i];
+    const next = densityTableGOST_Full[i + 1];
     if (strength >= cur.strength && strength <= next.strength) {
       const t = (strength - cur.strength) / (next.strength - cur.strength);
       return cur.density + t * (next.density - cur.density);
     }
   }
-  return densityTable[densityTable.length - 1].density;
+  return densityTableGOST_Full[densityTableGOST_Full.length - 1].density;
 }
 
 // ===== РАСЧЁТ РАЗБАВЛЕНИЯ ЧЕРЕЗ ПЛОТНОСТИ (с контракцией) =====
