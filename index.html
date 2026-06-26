@@ -270,54 +270,41 @@ function calcDilutionByDensity(V_start, C_start, C_target) {
 
   const rho_start = getDensity(C_start);
   const rho_final = getDensity(C_target);
+  const rho_ethanol = 0.7893;  // плотность этанола при 20°C
+  const rho_water = 0.9982;    // плотность воды при 20°C
 
-  // Абсолютный спирт (литры)
-  const A = V_start * (C_start / 100);
+  // ========== РАСЧЕТ ЧЕРЕЗ МАССЫ (правильный способ) ==========
 
-  // Конечный объём раствора нужной крепости
-  const V_final = A / (C_target / 100);
+  // 1️⃣ Объем чистого спирта (этанола)
+  const V_ethanol = V_start * (C_start / 100);
 
-  // Массы растворов
+  // 2️⃣ Массы в исходном растворе спирта
   const m_start = V_start * rho_start;
-  const m_final = V_final * rho_final;
+  const m_ethanol = V_ethanol * rho_ethanol;
+  
+  // 3️⃣ Нужная масса конечного раствора
+  // (количество спирта не меняется, меняется только добавляемая вода)
+  const m_final = m_ethanol / (C_target / 100);
 
-  // Добавляемая вода
-  const rho_water = 0.9982;
+  // 4️⃣ Масса добавляемой воды
   const m_water_add = m_final - m_start;
   const V_water_add = m_water_add / rho_water;
 
-// Итерационная корректировка воды
-let water = V_water_add;
+  // 5️⃣ Реальный объем конечного раствора (с контракцией)
+  const V_final_real = m_final / rho_final;
 
-for (let i = 0; i < 10; i++) {
+  // 6️⃣ Контракция (в процентах)
+  const V_final_theoretical = V_start + V_water_add;  // БЕЗ контракции
+  const contraction = (1 - V_final_real / V_final_theoretical) * 100;
 
-    const totalBeforeMix = V_start + water;
-
-    const contraction =
-        (1 - V_final / totalBeforeMix);
-
-    const error =
-        (A / V_final) -
-        (C_target / 100);
-
-    if (Math.abs(error) < 0.00001) break;
-
-    water += error * 20;
-}
-
-  // Контракция
-  const totalBeforeMix = V_start + water;
-
-const contraction =
-    (1 - V_final / totalBeforeMix) * 100;
-
-return {
-    V_water_add: water,
-    V_final,
-    contraction,
-    rho_start,
-    rho_final
-};
+  // ========== ВОЗВРАТ РЕЗУЛЬТАТОВ ==========
+  return {
+    V_water_add: V_water_add,    // Объем воды для добавления
+    V_final: V_final_real,        // Итоговый объем (с контракцией)
+    contraction: contraction,     // Контракция в %
+    rho_start: rho_start,         // Плотность исходного спирта
+    rho_final: rho_final          // Плотность конечного раствора
+  };
 }
 
 // ===== РАСЧЁТ БЕЗ КОНТРАКЦИИ (простая формула) =====
