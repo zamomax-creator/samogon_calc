@@ -260,3 +260,60 @@ h1 {
 
 .result-item:last-child { margin-bottom: 0; }
 .result-val { font-weight: 600; }
+
+/* ==========================================
+   Адаптация для мобильных устройств (Телефоны)
+   ========================================== */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+    
+    .container {
+        padding: 20px 15px;
+        border-radius: 12px;
+    }
+
+    /* Шапка: кнопка темы переезжает под заголовок */
+    .header-container {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    /* Вкладки: выстраиваем в удобную сетку 2x2 */
+    .tabs {
+        flex-wrap: wrap;
+        border-bottom: none;
+    }
+    
+    .tab-btn {
+        flex: 1 1 50%; /* Каждая кнопка занимает половину ширины */
+        font-size: 13px;
+        padding: 10px 5px;
+        border-bottom: 2px solid var(--card-border);
+    }
+    
+    .tab-btn.active {
+        margin-bottom: 0;
+    }
+
+    /* Результаты: переносим значения на новую строку для читаемости */
+    .result-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        margin-bottom: 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        padding-bottom: 8px;
+    }
+    
+    .result-item:last-child {
+        border-bottom: none;
+    }
+    
+    .result-val {
+        font-size: 16px;
+    }
+}
