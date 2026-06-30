@@ -4,7 +4,7 @@
 // Логика переключения тем (Light/Dark Glassmorphism)
 // ==========================================
 function initTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
+    const savedTheme = localStorage.getItem('theme') || 'dark'; // Пусть темная будет по умолчанию
     document.documentElement.setAttribute('data-theme', savedTheme);
     updateThemeButton(savedTheme);
 }
@@ -27,10 +27,58 @@ function updateThemeButton(theme) {
     }
 }
 
-// Запускаем проверку темы при загрузке скрипта
 initTheme();
 
-// Переключение вкладок интерфейса
+// ==========================================
+// Логика Истории Вычислений
+// ==========================================
+function addToHistory(title, text) {
+    let history = JSON.parse(localStorage.getItem('calcHistory')) || [];
+    const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    history.unshift({ title, text, time }); // Добавляем в начало
+    if (history.length > 20) history.pop(); // Храним только последние 20
+    localStorage.setItem('calcHistory', JSON.stringify(history));
+    renderHistory();
+}
+
+function renderHistory() {
+    let history = JSON.parse(localStorage.getItem('calcHistory')) || [];
+    const list = document.getElementById('history-list');
+    if (!list) return;
+    
+    if (history.length === 0) {
+        list.innerHTML = '<div style="text-align:center; color: var(--text-muted); margin-top: 30px; padding: 20px; border: 1px dashed var(--card-border); border-radius: 8px;">История пуста.<br>Сделайте первый расчет!</div>';
+        return;
+    }
+    
+    list.innerHTML = history.map(item => `
+        <div style="background: var(--result-bg); border-left: 4px solid var(--primary); padding: 12px; margin-bottom: 12px; border-radius: 0 8px 8px 0; border: 1px solid var(--card-border); border-left-width: 4px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+            <div style="display:flex; justify-content: space-between; margin-bottom: 6px;">
+                <strong style="color: var(--primary); font-size: 14px; letter-spacing: 0.5px;">${item.title}</strong>
+                <span style="font-size: 12px; color: var(--text-muted);">${item.time}</span>
+            </div>
+            <div style="font-size: 14px; color: var(--text-color); line-height: 1.5;">
+                ${item.text}
+            </div>
+        </div>
+    `).join('');
+}
+
+function clearHistory() {
+    if(confirm('Точно очистить всю историю расчетов?')) {
+        localStorage.removeItem('calcHistory');
+        renderHistory();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    renderHistory();
+});
+
+
+// ==========================================
+// Основной интерфейс
+// ==========================================
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -39,31 +87,6 @@ function switchTab(tabId) {
     event.currentTarget.classList.add('active');
 }
 
-// Переключение единиц измерения для Разбавления
-function setDilUnit(unit) {
-    // Меняем активную кнопку визуально
-    document.getElementById('btn-dil-l').classList.remove('active');
-    document.getElementById('btn-dil-ml').classList.remove('active');
-    document.getElementById('btn-dil-' + unit).classList.add('active');
-    
-    // Записываем значение в скрытое поле
-    document.getElementById('dil-unit').value = unit;
-    
-    // Запускаем пересчет
-    convertDilutionInputs();
-}
-
-// Переключение единиц измерения для Дробного перегона
-function setFracUnit(unit) {
-    document.getElementById('btn-frac-l').classList.remove('active');
-    document.getElementById('btn-frac-ml').classList.remove('active');
-    document.getElementById('btn-frac-' + unit).classList.add('active');
-    
-    document.getElementById('frac-unit').value = unit;
-    convertFractionInputs();
-}
-
-// Вспомогательная функция округления для вывода на экран
 function displayRound(value, decimals = 3) {
     return value.toFixed(decimals);
 }
@@ -77,16 +100,16 @@ function runCorrection() {
     
     document.getElementById('val-true-strength').innerText = displayRound(trueStrength, 2) + " % об.";
     document.getElementById('res-correction').style.display = 'block';
+
+    // Запись в историю
+    addToHistory('Коррекция (Ареометр)', `Показания: <b>${strength}%</b> при <b>${temp}°C</b>.<br>Истинная крепость: <b>${displayRound(trueStrength, 2)}%</b>`);
 }
 
 // 2. Запуск расчета разбавления
-// Храним текущую единицу измерения, чтобы знать, как конвертировать при переключении селектора
 let currentDilUnit = 'l';
 
-// Переключение режимов разбавления (Классика / Конечный объем)
 function toggleDilutionMode() {
     const mode = document.getElementById('dil-mode').value;
-    
     if (mode === 'classic') {
         document.getElementById('group-dil-classic').style.display = 'block';
         document.getElementById('group-dil-target').style.display = 'none';
@@ -96,18 +119,23 @@ function toggleDilutionMode() {
         document.getElementById('group-dil-target').style.display = 'block';
         document.getElementById('row-dil-source').style.display = 'flex';
     }
-    // Скрываем старые результаты, так как режим изменился
     document.getElementById('res-dilution').style.display = 'none';
 }
 
-// Автоматический пересчет значений в инпутах при смене Л / МЛ
+function setDilUnit(unit) {
+    document.getElementById('btn-dil-l').classList.remove('active');
+    document.getElementById('btn-dil-ml').classList.remove('active');
+    document.getElementById('btn-dil-' + unit).classList.add('active');
+    document.getElementById('dil-unit').value = unit;
+    convertDilutionInputs();
+}
+
 function convertDilutionInputs() {
     const unit = document.getElementById('dil-unit').value;
     if (unit === currentDilUnit) return;
 
     const volInput = document.getElementById('dil-vol');
     const targetVolInput = document.getElementById('dil-target-vol');
-
     const valVol = parseFloat(volInput.value) || 0;
     const valTargetVol = parseFloat(targetVolInput.value) || 0;
 
@@ -122,28 +150,18 @@ function convertDilutionInputs() {
         document.getElementById('lbl-dil-vol').innerText = "Объем исходного спирта (л)";
         document.getElementById('lbl-dil-target-vol').innerText = "Желаемый объем готового раствора (л)";
     }
-    
     currentDilUnit = unit;
-
-    // Если результаты уже были выведены на экран, сразу обновляем их в новых единицах
-    if (document.getElementById('res-dilution').style.display === 'block') {
-        runDilution();
-    }
+    if (document.getElementById('res-dilution').style.display === 'block') runDilution();
 }
 
-// Обновленный расчет разбавления с учетом температуры
 function runDilution() {
     const mode = document.getElementById('dil-mode').value;
     const unit = document.getElementById('dil-unit').value;
-    
     const inputStrength = parseFloat(document.getElementById('dil-strength').value) || 0;
     const inputTemp = parseFloat(document.getElementById('dil-temp').value) || 20;
     const target = parseFloat(document.getElementById('dil-target').value) || 0;
     
-    // 1. Считаем истинную крепость через модуль коррекции
     const strength = OIML.getTrueStrength(inputStrength, inputTemp);
-    
-    // 2. Если температура не 20, показываем пользователю реальную крепость
     const rowTrueStr = document.getElementById('row-dil-true-str');
     if (inputTemp !== 20) {
         document.getElementById('val-dil-true-str').innerText = displayRound(strength, 2) + " % об.";
@@ -153,49 +171,57 @@ function runDilution() {
     }
 
     if (target >= strength) {
-        alert("Целевая крепость должна быть меньше исходной (с учетом температурной коррекции)!");
+        alert("Целевая крепость должна быть меньше исходной!");
         return;
     }
 
-    // Настраиваем множители отображения и знаки
     const multiplier = unit === 'ml' ? 1000 : 1;
     const unitSign = unit === 'ml' ? " мл" : " л";
     const decimals = unit === 'ml' ? 1 : 3;
 
     let res;
+    let historyText = "";
 
     if (mode === 'classic') {
         let vol = parseFloat(document.getElementById('dil-vol').value) || 0;
+        let vInput = vol;
         if (unit === 'ml') vol /= 1000; 
         
         res = OIML.dilution(vol, strength, target);
+        historyText = `Было: <b>${vInput}${unitSign} (${inputStrength}%)</b>. Разбавляем до <b>${target}%</b>.<br>Нужно воды: <b>${displayRound(res.waterToAdd * multiplier, decimals)}${unitSign}</b>.<br>Итог: <b>${displayRound(res.finalVolume * multiplier, decimals)}${unitSign}</b>.`;
     } else {
         let targetVol = parseFloat(document.getElementById('dil-target-vol').value) || 0;
+        let vTargetInput = targetVol;
         if (unit === 'ml') targetVol /= 1000;
         
         res = OIML.dilutionTargetVolume(targetVol, strength, target);
-        
-        // Показываем сколько нужно взять исходного спирта
         document.getElementById('val-dil-source').innerText = displayRound(res.sourceVolume * multiplier, decimals) + unitSign;
+        historyText = `Хотим получить: <b>${vTargetInput}${unitSign} (${target}%)</b>.<br>Взять исходного спирта (${inputStrength}%): <b>${displayRound(res.sourceVolume * multiplier, decimals)}${unitSign}</b>.<br>Добавить воды: <b>${displayRound(res.waterToAdd * multiplier, decimals)}${unitSign}</b>.`;
     }
     
-    // Выводим остальные результаты
     document.getElementById('val-dil-as').innerText = displayRound(res.absoluteAlcohol * multiplier, decimals) + unitSign;
     document.getElementById('val-dil-water').innerText = displayRound(res.waterToAdd * multiplier, decimals) + unitSign;
     document.getElementById('val-dil-final').innerText = displayRound(res.finalVolume * multiplier, decimals) + unitSign;
     
-    // Выводим контракцию
     const contraMl = res.contractionVolume * 1000;
     document.getElementById('val-dil-contra').innerText = displayRound(contraMl, 1) + " мл (" + displayRound(res.contractionPercent, 2) + "%)";
-    
     document.getElementById('res-dilution').style.display = 'block';
+
+    // Запись в историю
+    addToHistory('Разбавление', historyText);
 }
 
 // 3. Запуск расчета фракций
-// Храним текущую единицу измерения для дробного перегона
 let currentFracUnit = 'l';
 
-// Конвертация инпута дробного перегона при смене Л / МЛ
+function setFracUnit(unit) {
+    document.getElementById('btn-frac-l').classList.remove('active');
+    document.getElementById('btn-frac-ml').classList.remove('active');
+    document.getElementById('btn-frac-' + unit).classList.add('active');
+    document.getElementById('frac-unit').value = unit;
+    convertFractionInputs();
+}
+
 function convertFractionInputs() {
     const unit = document.getElementById('frac-unit').value;
     if (unit === currentFracUnit) return;
@@ -210,21 +236,14 @@ function convertFractionInputs() {
         volInput.value = (valVol / 1000).toFixed(3);
         document.getElementById('lbl-frac-vol').innerText = "Объем спирта-сырца (л)";
     }
-    
     currentFracUnit = unit;
-
-    // Если результаты открыты — пересчитываем "на лету"
-    if (document.getElementById('res-fraction').style.display === 'block') {
-        runFraction();
-    }
+    if (document.getElementById('res-fraction').style.display === 'block') runFraction();
 }
 
-// Модернизированный запуск расчета фракций
 function runFraction() {
     const unit = document.getElementById('frac-unit').value;
     let vol = parseFloat(document.getElementById('frac-vol').value) || 0;
-    
-    // Если введено в мл, переводим в литры для расчетного ядра
+    let vInput = vol;
     if (unit === 'ml') vol /= 1000;
     
     const strength = parseFloat(document.getElementById('frac-strength').value) || 0;
@@ -239,7 +258,6 @@ function runFraction() {
     
     const res = OIML.fraction(vol, strength, headsP, tailsP, qOutput);
     
-    // Множители для красивого вывода в зависимости от выбранных л/мл
     const multiplier = unit === 'ml' ? 1000 : 1;
     const unitSign = unit === 'ml' ? " мл" : " л";
     const decimals = unit === 'ml' ? 1 : 3;
@@ -247,25 +265,22 @@ function runFraction() {
     document.getElementById('val-frac-as').innerText = displayRound(res.totalAlcohol * multiplier, decimals) + unitSign + " АС";
     document.getElementById('val-frac-heads').innerText = displayRound(res.heads * multiplier, decimals) + unitSign;
     document.getElementById('val-frac-hearts-as').innerText = displayRound(res.hearts * multiplier, decimals) + unitSign + " АС";
-    
-    // Выводим физический объем тела при заданной крепости
     document.getElementById('val-frac-hearts-vol').innerText = displayRound(res.heartsVolume * multiplier, decimals) + unitSign;
-    
     document.getElementById('val-frac-tails').innerText = displayRound(res.tails * multiplier, decimals) + unitSign;
     
     document.getElementById('res-fraction').style.display = 'block';
+
+    // Запись в историю
+    addToHistory('Дробный перегон', `Сырец: <b>${vInput}${unitSign} (${strength}%)</b>.<br>Выход тела при ${qOutput}%: <b>${displayRound(res.heartsVolume * multiplier, decimals)}${unitSign}</b>.<br>Головы: <b>${displayRound(res.heads * multiplier, decimals)}${unitSign} АС</b>.`);
 }
 
-// ==========================================
 // 4. Логика для вкладки Смешивание
-// ==========================================
 let currentBlendUnit = 'l';
 
 function setBlendUnit(unit) {
     document.getElementById('btn-blend-l').classList.remove('active');
     document.getElementById('btn-blend-ml').classList.remove('active');
     document.getElementById('btn-blend-' + unit).classList.add('active');
-    
     document.getElementById('blend-unit').value = unit;
     convertBlendInputs();
 }
@@ -290,42 +305,37 @@ function convertBlendInputs() {
         document.getElementById('lbl-blend-vol1').innerText = "Объем первого раствора (л)";
         document.getElementById('lbl-blend-vol2').innerText = "Объем второго раствора (л)";
     }
-    
     currentBlendUnit = unit;
-
-    if (document.getElementById('res-blend').style.display === 'block') {
-        runBlend();
-    }
+    if (document.getElementById('res-blend').style.display === 'block') runBlend();
 }
 
 function runBlend() {
     const unit = document.getElementById('blend-unit').value;
-    
     let v1 = parseFloat(document.getElementById('blend-vol1').value) || 0;
     let v2 = parseFloat(document.getElementById('blend-vol2').value) || 0;
     const q1 = parseFloat(document.getElementById('blend-str1').value) || 0;
     const q2 = parseFloat(document.getElementById('blend-str2').value) || 0;
 
-    // Ядро OIML работает только с литрами
+    let v1Input = v1;
+    let v2Input = v2;
+
     if (unit === 'ml') {
         v1 /= 1000;
         v2 /= 1000;
     }
 
-    // Обращаемся к модулю 3
     const res = OIML.blend(v1, q1, v2, q2);
-
-    // Настраиваем вывод
     const multiplier = unit === 'ml' ? 1000 : 1;
     const unitSign = unit === 'ml' ? " мл" : " л";
     const decimals = unit === 'ml' ? 1 : 3;
 
     document.getElementById('val-blend-str').innerText = displayRound(res.strength, 2) + " % об.";
     document.getElementById('val-blend-vol').innerText = displayRound(res.volume * multiplier, decimals) + unitSign;
-    
-    // Контракцию выводим в миллилитрах для наглядности
     const contraMl = res.contraction * 1000;
     document.getElementById('val-blend-contra').innerText = displayRound(contraMl, 1) + " мл";
 
     document.getElementById('res-blend').style.display = 'block';
+
+    // Запись в историю
+    addToHistory('Смешивание', `Слили: <b>${v1Input}${unitSign} (${q1}%)</b> и <b>${v2Input}${unitSign} (${q2}%)</b>.<br>Итог: <b>${displayRound(res.volume * multiplier, decimals)}${unitSign}</b> крепостью <b>${displayRound(res.strength, 2)}%</b>.`);
 }
