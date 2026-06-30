@@ -19,6 +19,7 @@
         <button class="tab-btn" onclick="switchTab('fraction')">Дробный перегон</button>
         <button class="tab-btn" onclick="switchTab('correction')">Коррекция</button>
 		<button class="tab-btn" onclick="switchTab('blend')">Смешивание</button>
+		<button class="tab-btn" onclick="switchTab('history')">История</button>
     </div>
 
     <div id="dilution" class="tab-content active">
@@ -225,6 +226,15 @@
                 <span class="result-val" id="val-blend-contra">0 мл</span>
             </div>
         </div>
+    </div>
+	
+	<div id="history" class="tab-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <p style="margin: 0; font-size: 13px; color: var(--text-muted);">Последние 20 расчетов сохраняются автоматически</p>
+            <button onclick="clearHistory()" style="background: none; border: 1px solid var(--accent); color: var(--accent); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.3s;">Очистить</button>
+        </div>
+        <div id="history-list">
+            </div>
     </div>
 
 </div>
